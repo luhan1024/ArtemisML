@@ -1,0 +1,13 @@
+#pragma once
+
+#include <string>
+#include <vector>
+
+namespace art::data
+{
+    struct DataFrame
+    {
+        std::vector<std::string> column_names;
+        std::vector<std::vector<std::string>> rows;
+    };
+}

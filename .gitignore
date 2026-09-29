@@ -1,0 +1,14 @@
+build/
+*.exe
+*.o
+*.obj
+*.pdb
+*.ilk
+.vscode/
+.idea/
+*.user
+*.suo
+*.vcxproj
+*.vcxproj.filters
+*.sln
+roundtrip.csv
