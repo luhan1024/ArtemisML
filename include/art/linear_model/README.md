@@ -30,6 +30,9 @@
 模型可以通过 `art::save` 保存、通过 `art::load` 恢复。持久化包含系数、截距列约定、
 类别数量、类别标签映射、决策阈值和必要配置，不包含训练数据、临时梯度或优化器指针。
 
+也可以直接调用 `model.save(std::filesystem::path{"model.artemisml"})`；加载后的
+`art::Model` 同样支持 `save(path)`，并保留 `predict`、`predict_proba` 和 `evaluate`。
+
 线性回归最小二乘目标为：
 
 [

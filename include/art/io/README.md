@@ -22,3 +22,11 @@ IO 层报告格式错误和路径错误，不负责训练模型、填补缺失�
 格式版本的单文件文本格式。加载时验证签名、版本、类型、矩阵维度、类别数量和
 有限值，不执行文件中的代码。
 
+具体模型和运行时包装均提供成员式便捷调用：
+
+```cpp
+model.save(std::filesystem::path{"model.artemisml"});
+auto loaded = art::load("model.artemisml");
+loaded.save(std::filesystem::path{"model-copy.artemisml"});
+```
+

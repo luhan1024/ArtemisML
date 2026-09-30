@@ -22,6 +22,7 @@
 #include <Eigen/Dense>
 
 #include <cstddef>
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -82,6 +83,7 @@ namespace art::linear_model
         double decision_threshold() const noexcept;
         const char* type_name() const noexcept;
         const LogisticRegressionOptions& options() const noexcept;
+        void save(const std::filesystem::path& path) const;
         // Rows include the intercept; binary models use one logit column,
         // while multiclass models use one column per class.
         const Eigen::MatrixXd& coefficients() const;

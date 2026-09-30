@@ -166,6 +166,11 @@ double Model::evaluate(
     return model_->score(features, targets);
 }
 
+void Model::save(const std::filesystem::path& path) const
+{
+    art::save(*this, path.string());
+}
+
 void save(
     const linear_model::LogisticRegression& model,
     const std::string& path

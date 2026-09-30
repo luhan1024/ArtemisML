@@ -20,6 +20,7 @@
 
 #include <Eigen/Dense>
 
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
@@ -37,6 +38,7 @@ namespace art
             const Eigen::MatrixXd& features,
             const Eigen::VectorXd& targets
         ) const;
+        void save(const std::filesystem::path& path) const;
 
     private:
         friend void save(

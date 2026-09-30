@@ -22,6 +22,7 @@
 
 #include <cassert>
 #include <cstdio>
+#include <filesystem>
 #include <iostream>
 #include <variant>
 
@@ -54,12 +55,20 @@ int main()
     art::linear_model::LogisticRegression binary_model;
     binary_model.fit(binary_features, binary_targets);
     binary_model.set_class_labels({"negative", "positive"});
-    art::save(binary_model, "model_binary.artemisml");
-    const art::Model loaded_binary = art::load("model_binary.artemisml");
+    const std::filesystem::path binary_path = "model_binary.artemisml";
+    binary_model.save(binary_path);
+    const art::Model loaded_binary = art::load(binary_path.string());
     assert_same_predictions(
         binary_model, loaded_binary, binary_features, binary_targets
     );
+    const std::filesystem::path binary_copy_path = "model_binary_copy.artemisml";
+    loaded_binary.save(binary_copy_path);
+    const art::Model loaded_binary_copy = art::load(binary_copy_path.string());
+    assert_same_predictions(
+        binary_model, loaded_binary_copy, binary_features, binary_targets
+    );
     std::remove("model_binary.artemisml");
+    std::remove("model_binary_copy.artemisml");
 
     const Eigen::MatrixXd multiclass_features =
         (Eigen::MatrixXd(9, 2) <<
@@ -72,8 +81,9 @@ int main()
     art::linear_model::LogisticRegression multiclass_model;
     multiclass_model.fit(multiclass_features, multiclass_targets);
     multiclass_model.set_class_labels({"left", "middle", "right"});
-    art::save(multiclass_model, "model_multiclass.artemisml");
-    const art::Model loaded_multiclass = art::load("model_multiclass.artemisml");
+    const std::filesystem::path multiclass_path = "model_multiclass.artemisml";
+    art::save(multiclass_model, multiclass_path.string());
+    const art::Model loaded_multiclass = art::load(multiclass_path.string());
     assert_same_predictions(
         multiclass_model, loaded_multiclass,
         multiclass_features, multiclass_targets
@@ -107,8 +117,9 @@ int main()
     art::linear_model::LogisticRegression text_model;
     text_model.fit(text_features, text_targets);
     text_model.set_class_labels(encoder.classes());
-    art::save(text_model, "model_text.artemisml");
-    const art::Model loaded_text = art::load("model_text.artemisml");
+    const std::filesystem::path text_path = "model_text.artemisml";
+    art::save(text_model, text_path.string());
+    const art::Model loaded_text = art::load(text_path.string());
     assert_same_predictions(text_model, loaded_text, text_features, text_targets);
     std::remove("model_text.artemisml");
 

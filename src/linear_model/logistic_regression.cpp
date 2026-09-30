@@ -15,6 +15,7 @@
  * ============================================================================
  */
 #include "art/linear_model/logistic_regression.h"
+#include "art/io/model.h"
 
 #include "art/loss/loss.h"
 #include "art/optim/optimizer.h"
@@ -515,6 +516,11 @@ const char* LogisticRegression::type_name() const noexcept
 const LogisticRegressionOptions& LogisticRegression::options() const noexcept
 {
     return options_;
+}
+
+void LogisticRegression::save(const std::filesystem::path& path) const
+{
+    art::save(*this, path.string());
 }
 
 void LogisticRegression::restore_state(
