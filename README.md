@@ -66,6 +66,20 @@ ArtemisML/
 
 各层职责和依赖方向由 [AGENTS.md](AGENTS.md) 统一规定。
 
+## 分层文档
+
+每个项目自有目录均维护对应的 README，文档与代码层级保持一致：
+
+- [公共头文件总览](include/README.md)
+- [art 公共 API](include/art/README.md)
+- [源码实现总览](src/README.md)
+- [测试总览](tests/README.md)
+- 各功能层的 API、公式、算法和完成度说明位于对应目录的 README。
+
+自动求导是当前接口标准的下一项核心基础设施。规划中的 
+`art::core::autodiff` 将提供 `Variable`、`GradientTape`、梯度、Jacobian、Hessian-vector product 等协议，
+供 `GradientDescent`、`AdaGrad`、`Adam` 和 `NewtonOptimizer` 统一使用。
+
 ## 当前已实现功能
 
 ### CSV 与数据集
