@@ -101,8 +101,36 @@ optim::OptimizationResult Ridge::fit(const data::Dataset& dataset, const optim::
     last_result_ = {};
 
     RidgeProblem problem(dataset, alpha_);
+    if (options.max_iterations == 0)
+        throw std::invalid_argument("Ridge requires at least one optimization iteration");
     const auto initial = optim::ParameterVector::Zero(static_cast<Eigen::Index>(problem.parameter_count()));
-    last_result_ = optimizer.optimize(problem, initial, options);
+    optim::OptimizerState state;
+    optim::ParameterVector parameters = initial;
+    last_result_ = {};
+
+    for (std::size_t iteration = 0; iteration < options.max_iterations; ++iteration)
+    {
+        const optim::OptimizationStepResult step =
+            optimizer.step(problem, parameters, state, options);
+        parameters = step.parameters;
+        const optim::ParameterVector next_gradient = problem.gradient(parameters);
+        if (next_gradient.size() != parameters.size() || !next_gradient.allFinite())
+        {
+            throw std::runtime_error("Ridge produced a non-finite gradient");
+        }
+        const double final_value = problem.value(parameters);
+        if (!std::isfinite(final_value))
+        {
+            throw std::runtime_error("Ridge produced a non-finite objective value");
+        }
+        const bool converged =
+            next_gradient.norm() <= options.tolerance ||
+            step.step_norm <= options.tolerance;
+        last_result_ = {parameters, final_value, state.step, converged};
+        if (converged)
+            break;
+    }
+
     parameters_ = last_result_.parameters;
     feature_count_ = dataset.feature_count();
     mark_fitted();

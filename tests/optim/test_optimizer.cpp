@@ -47,26 +47,33 @@ int main()
     gradient_options.tolerance = 1e-8;
 
     GradientDescent gradient_descent;
-    const OptimizationResult gradient_result = gradient_descent.optimize(
+    OptimizerState gradient_state;
+    const OptimizationStepResult gradient_step = gradient_descent.step(
         problem,
         initial_parameters,
+        gradient_state,
         gradient_options
     );
 
-    assert(gradient_result.converged);
-    assert(std::abs(gradient_result.parameters(0) - 3.0) < 1e-5);
-    assert(std::abs(gradient_result.parameters(1) + 2.0) < 1e-5);
+    assert(gradient_state.step == 1);
+    assert(std::abs(gradient_step.parameters(0) - 0.3) < 1e-12);
+    assert(std::abs(gradient_step.parameters(1) + 0.2) < 1e-12);
+    assert(std::abs(gradient_step.step_norm - std::sqrt(0.13)) < 1e-12);
 
     NewtonOptimizer newton;
-    const OptimizationResult newton_result = newton.optimize(
+    OptimizerState newton_state;
+    OptimizerOptions newton_options = gradient_options;
+    newton_options.learning_rate = 1.0;
+    const OptimizationStepResult newton_step = newton.step(
         problem,
         initial_parameters,
-        gradient_options
+        newton_state,
+        newton_options
     );
 
-    assert(newton_result.converged);
-    assert(std::abs(newton_result.parameters(0) - 3.0) < 1e-10);
-    assert(std::abs(newton_result.parameters(1) + 2.0) < 1e-10);
+    assert(newton_state.step == 1);
+    assert(std::abs(newton_step.parameters(0) - 3.0) < 1e-10);
+    assert(std::abs(newton_step.parameters(1) + 2.0) < 1e-10);
 
     std::cout << "Optimizer test passed.\n";
     return 0;

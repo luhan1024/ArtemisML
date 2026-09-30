@@ -21,11 +21,6 @@ namespace
             throw std::invalid_argument("Learning rate must be positive and finite");
         }
 
-        if (options.max_iterations == 0)
-        {
-            throw std::invalid_argument("Maximum iterations must be greater than zero");
-        }
-
         if (!std::isfinite(options.tolerance) || options.tolerance < 0.0)
         {
             throw std::invalid_argument("Tolerance must be non-negative and finite");
@@ -92,99 +87,91 @@ HessianMatrix OptimizationProblem::hessian(const ParameterVector&) const
     throw std::logic_error("This optimization problem does not provide a Hessian");
 }
 
-OptimizationResult GradientDescent::optimize(
+OptimizationStepResult GradientDescent::step(
     const OptimizationProblem& problem,
-    const ParameterVector& initial_parameters,
+    const ParameterVector& parameters,
+    OptimizerState& state,
     const OptimizerOptions& options
 ) const
 {
     validateOptions(options);
+    validateParameters(parameters);
 
-    validateParameters(initial_parameters);
+    const double current_value = problem.value(parameters);
+    validateValue(current_value);
 
-    ParameterVector parameters = initial_parameters;
+    const ParameterVector current_gradient = problem.gradient(parameters);
+    validateGradient(parameters, current_gradient);
 
-    for (std::size_t iteration = 0; iteration < options.max_iterations; ++iteration)
+    const ParameterVector next_parameters =
+        parameters - options.learning_rate * current_gradient;
+    if (!next_parameters.allFinite())
     {
-        const double current_value = problem.value(parameters);
-        validateValue(current_value);
-
-        const ParameterVector current_gradient = problem.gradient(parameters);
-        validateGradient(parameters, current_gradient);
-
-        if (current_gradient.norm() <= options.tolerance)
-        {
-            return {parameters, current_value, iteration, true};
-        }
-
-        parameters -= options.learning_rate * current_gradient;
-
-        if (!parameters.allFinite())
-        {
-            throw std::runtime_error("Gradient descent produced a non-finite parameter");
-        }
+        throw std::runtime_error("Gradient descent produced a non-finite parameter");
     }
 
-    const double final_value = problem.value(parameters);
-    validateValue(final_value);
-
-    return {parameters, final_value, options.max_iterations, false};
+    ++state.step;
+    return {
+        next_parameters,
+        current_gradient,
+        current_value,
+        (next_parameters - parameters).norm()
+    };
 }
 
-OptimizationResult NewtonOptimizer::optimize(
+OptimizationStepResult NewtonOptimizer::step(
     const OptimizationProblem& problem,
-    const ParameterVector& initial_parameters,
+    const ParameterVector& parameters,
+    OptimizerState& state,
     const OptimizerOptions& options
 ) const
 {
     validateOptions(options);
+    validateParameters(parameters);
 
-    validateParameters(initial_parameters);
+    const double current_value = problem.value(parameters);
+    validateValue(current_value);
 
-    ParameterVector parameters = initial_parameters;
+    const ParameterVector current_gradient = problem.gradient(parameters);
+    validateGradient(parameters, current_gradient);
 
-    for (std::size_t iteration = 0; iteration < options.max_iterations; ++iteration)
+    const HessianMatrix current_hessian = problem.hessian(parameters);
+    validateHessian(parameters, current_hessian);
+
+    Eigen::FullPivLU<HessianMatrix> rank_check(current_hessian);
+    if (rank_check.rank() < current_hessian.rows())
     {
-        const double current_value = problem.value(parameters);
-        validateValue(current_value);
-
-        const ParameterVector current_gradient = problem.gradient(parameters);
-        validateGradient(parameters, current_gradient);
-
-        if (current_gradient.norm() <= options.tolerance)
-        {
-            return {parameters, current_value, iteration, true};
-        }
-
-        const HessianMatrix current_hessian = problem.hessian(parameters);
-        validateHessian(parameters, current_hessian);
-
-        Eigen::FullPivLU<HessianMatrix> rank_check(current_hessian);
-        if (rank_check.rank() < current_hessian.rows())
-        {
-            throw std::runtime_error("Hessian is singular");
-        }
-
-        Eigen::LDLT<HessianMatrix> solver(current_hessian);
-
-        if (solver.info() != Eigen::Success)
-        {
-            throw std::runtime_error("Failed to factorize Hessian");
-        }
-
-        const ParameterVector step = solver.solve(current_gradient);
-
-        if (solver.info() != Eigen::Success || !step.allFinite())
-        {
-            throw std::runtime_error("Failed to solve Newton step");
-        }
-
-        parameters -= step;
+        throw std::runtime_error("Hessian is singular");
     }
 
-    const double final_value = problem.value(parameters);
-    validateValue(final_value);
+    Eigen::LDLT<HessianMatrix> solver(current_hessian);
+    if (solver.info() != Eigen::Success)
+    {
+        throw std::runtime_error("Failed to factorize Hessian");
+    }
 
-    return {parameters, final_value, options.max_iterations, false};
+    const ParameterVector direction = solver.solve(current_gradient);
+    if (solver.info() != Eigen::Success || !direction.allFinite())
+    {
+        throw std::runtime_error("Failed to solve Newton step");
+    }
+
+    // Preserve the original Newton semantics: one call takes the full
+    // Newton direction.  learning_rate is the gradient-descent step size;
+    // using it here would turn the former full Newton update into a damped
+    // update and break the existing convergence contract.
+    const ParameterVector next_parameters = parameters - direction;
+    if (!next_parameters.allFinite())
+    {
+        throw std::runtime_error("Newton method produced a non-finite parameter");
+    }
+
+    ++state.step;
+    return {
+        next_parameters,
+        current_gradient,
+        current_value,
+        (next_parameters - parameters).norm()
+    };
 }
 }

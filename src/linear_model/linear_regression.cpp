@@ -138,15 +138,46 @@ OptimizationResult LinearRegression::fit(
     feature_count_ = 0;
 
     validateDataset(dataset);
+    if (options.max_iterations == 0)
+    {
+        throw std::invalid_argument("Linear regression requires at least one optimization iteration");
+    }
 
     LinearRegressionProblem problem(dataset);
     const ParameterVector initial_parameters =
         ParameterVector::Zero(static_cast<Eigen::Index>(problem.parameter_count()));
-    const OptimizationResult result = optimizer.optimize(
-        problem,
-        initial_parameters,
-        options
-    );
+    optim::OptimizerState state;
+    ParameterVector parameters = initial_parameters;
+    OptimizationResult result;
+
+    for (std::size_t iteration = 0; iteration < options.max_iterations; ++iteration)
+    {
+        const optim::OptimizationStepResult step = optimizer.step(
+            problem,
+            parameters,
+            state,
+            options
+        );
+        parameters = step.parameters;
+        const ParameterVector next_gradient = problem.gradient(parameters);
+        if (next_gradient.size() != parameters.size() || !next_gradient.allFinite())
+        {
+            throw std::runtime_error("Linear regression produced a non-finite gradient");
+        }
+        const double final_value = problem.value(parameters);
+        if (!std::isfinite(final_value))
+        {
+            throw std::runtime_error("Linear regression produced a non-finite objective value");
+        }
+        const bool converged =
+            next_gradient.norm() <= options.tolerance ||
+            step.step_norm <= options.tolerance;
+        result = {parameters, final_value, state.step, converged};
+        if (converged)
+        {
+            break;
+        }
+    }
 
     parameters_ = result.parameters;
     feature_count_ = dataset.feature_count();

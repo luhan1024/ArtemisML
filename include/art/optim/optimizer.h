@@ -10,8 +10,6 @@
 #include <Eigen/Dense>
 
 #include <cstddef>
-#include <functional>
-
 namespace art::optim
 {
 using ParameterVector = Eigen::VectorXd;
@@ -43,14 +41,32 @@ struct OptimizationResult
     bool converged = false;
 };
 
+struct OptimizerState
+{
+    // Number of successfully completed calls to Optimizer::step().
+    std::size_t step = 0;
+};
+
+struct OptimizationStepResult
+{
+    // The candidate produced by this step.
+    ParameterVector parameters;
+    // Gradient and objective evaluated at the input parameters.
+    ParameterVector gradient;
+    double objective_value = 0.0;
+    // Norm of candidate.parameters - input parameters.
+    double step_norm = 0.0;
+};
+
 class Optimizer
 {
 public:
     virtual ~Optimizer() = default;
 
-    virtual OptimizationResult optimize(
+    virtual OptimizationStepResult step(
         const OptimizationProblem& problem,
-        const ParameterVector& initial_parameters,
+        const ParameterVector& parameters,
+        OptimizerState& state,
         const OptimizerOptions& options
     ) const = 0;
 };
@@ -58,9 +74,10 @@ public:
 class GradientDescent final : public Optimizer
 {
 public:
-    OptimizationResult optimize(
+    OptimizationStepResult step(
         const OptimizationProblem& problem,
-        const ParameterVector& initial_parameters,
+        const ParameterVector& parameters,
+        OptimizerState& state,
         const OptimizerOptions& options
     ) const override;
 };
@@ -68,9 +85,10 @@ public:
 class NewtonOptimizer final : public Optimizer
 {
 public:
-    OptimizationResult optimize(
+    OptimizationStepResult step(
         const OptimizationProblem& problem,
-        const ParameterVector& initial_parameters,
+        const ParameterVector& parameters,
+        OptimizerState& state,
         const OptimizerOptions& options
     ) const override;
 };
