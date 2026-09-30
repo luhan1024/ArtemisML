@@ -1,5 +1,7 @@
-#include "linear_regression.h"
+#include "art/linear_model/linear_regression.h"
 
+#include <algorithm>
+#include <cmath>
 #include <stdexcept>
 
 namespace art::linear_model
@@ -21,6 +23,11 @@ namespace
         if (dataset.features.rows() != dataset.labels.size())
         {
             throw std::invalid_argument("Feature and label sample counts do not match");
+        }
+
+        if (!dataset.features.allFinite() || !dataset.labels.allFinite())
+        {
+            throw std::invalid_argument("Linear regression data contains a non-finite value");
         }
     }
 
@@ -118,6 +125,11 @@ OptimizationResult LinearRegression::fit(
     const OptimizerOptions& options
 )
 {
+    mark_unfitted();
+    fitted_ = false;
+    parameters_.resize(0);
+    feature_count_ = 0;
+
     validateDataset(dataset);
 
     LinearRegressionProblem problem(dataset);
@@ -132,6 +144,7 @@ OptimizationResult LinearRegression::fit(
     parameters_ = result.parameters;
     feature_count_ = dataset.feature_count();
     fitted_ = true;
+    mark_fitted();
 
     return result;
 }
@@ -160,6 +173,11 @@ double LinearRegression::mean_squared_error(
     const Eigen::VectorXd& labels
 ) const
 {
+    if (labels.size() == 0)
+    {
+        throw std::invalid_argument("Mean squared error requires at least one label");
+    }
+
     if (features.rows() != labels.size())
     {
         throw std::invalid_argument("Prediction features and labels have different sample counts");
@@ -167,6 +185,55 @@ double LinearRegression::mean_squared_error(
 
     const Eigen::VectorXd residuals = predict(features) - labels;
     return residuals.squaredNorm() / static_cast<double>(labels.size());
+}
+
+void LinearRegression::do_fit(
+    const base::FeatureInput& features,
+    const base::TargetInput& targets
+)
+{
+    Dataset dataset;
+    dataset.features = features;
+    dataset.labels = targets;
+    optim::GradientDescent optimizer;
+    OptimizerOptions options;
+
+    // For the quadratic least-squares objective, ||A||_F^2 / n is an
+    // upper bound on the largest Hessian eigenvalue of the augmented design
+    // matrix A=[X,1].  A step below 1/L is therefore stable without making
+    // the generic optimizer inspect model-specific data.
+    Eigen::MatrixXd augmented(features.rows(), features.cols() + 1);
+    augmented.leftCols(features.cols()) = features;
+    augmented.col(features.cols()).setOnes();
+    const double lipschitz_bound = augmented.squaredNorm() /
+        static_cast<double>(features.rows());
+    options.learning_rate = 0.5 / std::max(1.0, lipschitz_bound);
+    options.max_iterations = 200000;
+    options.tolerance = 1e-8;
+    fit(dataset, optimizer, options);
+}
+
+base::PredictionOutput LinearRegression::do_predict(
+    const base::FeatureInput& features
+) const
+{
+    if (features.cols() != static_cast<Eigen::Index>(feature_count_))
+        throw std::invalid_argument("Prediction feature dimension does not match model");
+    const Eigen::Index feature_count = static_cast<Eigen::Index>(feature_count_);
+    return features * parameters_.head(feature_count) +
+        Eigen::VectorXd::Constant(features.rows(), parameters_(feature_count));
+}
+
+double LinearRegression::do_score(
+    const base::FeatureInput& features,
+    const base::TargetInput& targets
+) const
+{
+    if (targets.size() == 0 || features.rows() != targets.size())
+        throw std::invalid_argument("Prediction features and labels have different sample counts");
+    const double total = (targets.array() - targets.mean()).square().sum();
+    const double residual = (do_predict(features) - targets).squaredNorm();
+    return total == 0.0 ? (residual == 0.0 ? 1.0 : 0.0) : 1.0 - residual / total;
 }
 
 const ParameterVector& LinearRegression::parameters() const

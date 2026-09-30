@@ -1,7 +1,9 @@
-#include "dataset.h"
-#include "csvReader.h"
+#include "art/data/dataset.h"
+#include "art/io/csvReader.h"
 
+#include <cmath>
 #include <stdexcept>
+#include <unordered_set>
 
 namespace
 {
@@ -37,6 +39,13 @@ namespace
             );
         }
 
+        if (!std::isfinite(number))
+        {
+            throw std::runtime_error(
+                "Non-finite value in column " + column_name + ": " + value
+            );
+        }
+
         if (parsed_length != value.size())
         {
             throw std::runtime_error(
@@ -45,6 +54,35 @@ namespace
         }
 
         return number;
+    }
+
+    void validateColumnNames(const art::data::DataFrame& data_frame)
+    {
+        std::unordered_set<std::string> seen;
+        for (const std::string& column_name : data_frame.column_names)
+        {
+            if (!seen.insert(column_name).second)
+            {
+                throw std::runtime_error(
+                    "Duplicate DataFrame column name: " + column_name
+                );
+            }
+        }
+
+        for (std::size_t row_index = 0; row_index < data_frame.rows.size(); ++row_index)
+        {
+            const std::size_t actual_width = data_frame.rows[row_index].size();
+            const std::size_t expected_width = data_frame.column_names.size();
+            if (actual_width != expected_width)
+            {
+                throw std::runtime_error(
+                    "Column count mismatch at DataFrame row " +
+                    std::to_string(row_index) + ": expected " +
+                    std::to_string(expected_width) + ", got " +
+                    std::to_string(actual_width)
+                );
+            }
+        }
     }
 }
 
@@ -56,7 +94,7 @@ Dataset Dataset::from_csv(
     const std::vector<std::string>& requested_feature_columns
 )
 {
-    CsvReader reader;
+    io::CsvReader reader;
     const DataFrame data_frame = reader.read(filename);
     return Dataset::from_dataframe(data_frame, label_column, requested_feature_columns);
 }
@@ -67,7 +105,14 @@ Dataset Dataset::from_dataframe(
     const std::vector<std::string>& requested_feature_columns
 )
 {
+    validateColumnNames(data_frame);
+
     const std::size_t label_index = findColumn(data_frame.column_names, label_column);
+
+    if (data_frame.rows.empty())
+    {
+        throw std::runtime_error("Dataset must contain at least one sample");
+    }
 
     std::vector<std::string> selected_features = requested_feature_columns;
 
@@ -88,6 +133,7 @@ Dataset Dataset::from_dataframe(
     }
 
     std::vector<std::size_t> feature_indices;
+    std::unordered_set<std::string> seen_features;
 
     for (const std::string& feature_name : selected_features)
     {
@@ -95,6 +141,13 @@ Dataset Dataset::from_dataframe(
         {
             throw std::runtime_error(
                 "Label column cannot also be a feature column: " + feature_name
+            );
+        }
+
+        if (!seen_features.insert(feature_name).second)
+        {
+            throw std::runtime_error(
+                "Feature column selected more than once: " + feature_name
             );
         }
 

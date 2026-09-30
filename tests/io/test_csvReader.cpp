@@ -1,10 +1,13 @@
-#include "csvReader.h"
-#include "dataset.h"
+#include "art/io/csvReader.h"
+#include "art/data/dataset.h"
 #include <stdexcept>
 #include <cassert>
+#include <cstdio>
 #include <iostream>
 
-using namespace art::data;
+using art::data::DataFrame;
+using art::data::Dataset;
+using art::io::CsvReader;
 
 int main()
 {
@@ -34,6 +37,41 @@ catch (const std::runtime_error& error)
               << error.what() << '\n';
 }
 
+assert(exception_caught);
+
+DataFrame multiline_data_frame = {
+    {"name", "description"},
+    {{"sample", "line one\nline two"}, {"quote", "contains \"quote\""}}
+};
+reader.write("roundtrip_multiline.csv", multiline_data_frame);
+DataFrame multiline_roundtrip = reader.read("roundtrip_multiline.csv");
+assert(multiline_roundtrip.column_names == multiline_data_frame.column_names);
+assert(multiline_roundtrip.rows == multiline_data_frame.rows);
+std::remove("roundtrip_multiline.csv");
+
+DataFrame invalid_data_frame = {{"only_column"}, {{"first", "extra"}}};
+exception_caught = false;
+try
+{
+    reader.write("invalid.csv", invalid_data_frame);
+}
+catch (const std::runtime_error& error)
+{
+    exception_caught = true;
+    std::cout << "Caught expected exception: " << error.what() << '\n';
+}
+assert(exception_caught);
+
+exception_caught = false;
+try
+{
+    reader.read("bad_quote.csv");
+}
+catch (const std::runtime_error& error)
+{
+    exception_caught = true;
+    std::cout << "Caught expected exception: " << error.what() << '\n';
+}
 assert(exception_caught);
 exception_caught = false;
 

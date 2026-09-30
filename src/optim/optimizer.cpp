@@ -1,4 +1,4 @@
-#include "optimizer.h"
+#include "art/optim/optimizer.h"
 
 #include <cmath>
 #include <stdexcept>
@@ -33,6 +33,19 @@ namespace
         }
     }
 
+    void validateParameters(const ParameterVector& parameters)
+    {
+        if (parameters.size() == 0)
+        {
+            throw std::invalid_argument("Initial parameter vector must not be empty");
+        }
+
+        if (!parameters.allFinite())
+        {
+            throw std::invalid_argument("Initial parameter vector contains a non-finite value");
+        }
+    }
+
     void validateGradient(
         const ParameterVector& parameters,
         const ParameterVector& gradient
@@ -46,6 +59,23 @@ namespace
         if (!gradient.allFinite())
         {
             throw std::runtime_error("Gradient contains a non-finite value");
+        }
+    }
+
+    void validateHessian(
+        const ParameterVector& parameters,
+        const HessianMatrix& hessian
+    )
+    {
+        if (hessian.rows() != parameters.size() ||
+            hessian.cols() != parameters.size())
+        {
+            throw std::runtime_error("Hessian dimension does not match parameter dimension");
+        }
+
+        if (!hessian.allFinite())
+        {
+            throw std::runtime_error("Hessian contains a non-finite value");
         }
     }
 }
@@ -63,10 +93,7 @@ OptimizationResult GradientDescent::optimize(
 {
     validateOptions(options);
 
-    if (initial_parameters.size() == 0)
-    {
-        throw std::invalid_argument("Initial parameter vector must not be empty");
-    }
+    validateParameters(initial_parameters);
 
     ParameterVector parameters = initial_parameters;
 
@@ -84,6 +111,11 @@ OptimizationResult GradientDescent::optimize(
         }
 
         parameters -= options.learning_rate * current_gradient;
+
+        if (!parameters.allFinite())
+        {
+            throw std::runtime_error("Gradient descent produced a non-finite parameter");
+        }
     }
 
     const double final_value = problem.value(parameters);
@@ -100,10 +132,7 @@ OptimizationResult NewtonOptimizer::optimize(
 {
     validateOptions(options);
 
-    if (initial_parameters.size() == 0)
-    {
-        throw std::invalid_argument("Initial parameter vector must not be empty");
-    }
+    validateParameters(initial_parameters);
 
     ParameterVector parameters = initial_parameters;
 
@@ -121,11 +150,12 @@ OptimizationResult NewtonOptimizer::optimize(
         }
 
         const HessianMatrix current_hessian = problem.hessian(parameters);
+        validateHessian(parameters, current_hessian);
 
-        if (current_hessian.rows() != parameters.size() ||
-            current_hessian.cols() != parameters.size())
+        Eigen::FullPivLU<HessianMatrix> rank_check(current_hessian);
+        if (rank_check.rank() < current_hessian.rows())
         {
-            throw std::runtime_error("Hessian dimension does not match parameter dimension");
+            throw std::runtime_error("Hessian is singular");
         }
 
         Eigen::LDLT<HessianMatrix> solver(current_hessian);

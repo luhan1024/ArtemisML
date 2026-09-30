@@ -1,7 +1,8 @@
 #pragma once
 
-#include "dataset.h"
-#include "optimizer.h"
+#include "art/data/dataset.h"
+#include "art/base/regressor.h"
+#include "art/optim/optimizer.h"
 
 namespace art::linear_model
 {
@@ -28,9 +29,11 @@ namespace art::linear_model
         const Dataset& dataset_;
     };
 
-    class LinearRegression
+    class LinearRegression final : public base::Regressor
     {
     public:
+        using base::Regressor::fit;
+
         OptimizationResult fit(
             const Dataset& dataset,
             const Optimizer& optimizer,
@@ -45,6 +48,11 @@ namespace art::linear_model
 
         const ParameterVector& parameters() const;
         std::size_t feature_count() const;
+
+    protected:
+        void do_fit(const base::FeatureInput& features, const base::TargetInput& targets) override;
+        base::PredictionOutput do_predict(const base::FeatureInput& features) const override;
+        double do_score(const base::FeatureInput& features, const base::TargetInput& targets) const override;
 
     private:
         ParameterVector parameters_;
