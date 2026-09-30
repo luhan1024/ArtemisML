@@ -45,6 +45,27 @@ private:
     const ParameterVector target = (ParameterVector(2) << 3.0, -2.0).finished();
 };
 
+class SingularQuadraticProblem final : public OptimizationProblem
+{
+public:
+    double value(const ParameterVector& parameters) const override
+    {
+        return 0.5 * parameters(0) * parameters(0);
+    }
+
+    ParameterVector gradient(const ParameterVector& parameters) const override
+    {
+        return (ParameterVector(2) << parameters(0), 1.0).finished();
+    }
+
+    HessianMatrix hessian(const ParameterVector&) const override
+    {
+        HessianMatrix result = HessianMatrix::Zero(2, 2);
+        result(0, 0) = 1.0;
+        return result;
+    }
+};
+
 int main()
 {
     QuadraticProblem problem;
@@ -83,6 +104,16 @@ int main()
     assert(newton_state.step == 1);
     assert(std::abs(newton_step.parameters(0) - 3.0) < 1e-10);
     assert(std::abs(newton_step.parameters(1) + 2.0) < 1e-10);
+
+    SingularQuadraticProblem singular_problem;
+    const OptimizationStepResult singular_step = newton.step(
+        singular_problem,
+        initial_parameters,
+        newton_state,
+        newton_options
+    );
+    assert(singular_step.parameters.allFinite());
+    assert(std::abs(singular_step.parameters(0)) < 1e-12);
 
     std::cout << "Optimizer test passed.\n";
     return 0;

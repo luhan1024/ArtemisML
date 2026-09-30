@@ -16,5 +16,11 @@
 - `optim`：目标函数、梯度、一阶和二阶优化器。
 - `loss`：回归、二分类和多分类损失函数及其对 prediction/logits 的梯度。
 
+`linear_model::LogisticRegression` 支持通过显式优化器对象选择梯度下降或二分类
+Newton 求解；训练记录包含目标函数值、梯度范数和步长范数。
+
+`art::save`/`art::load` 提供第一版模型持久化入口，当前支持
+`linear_model::LogisticRegression` 的二分类、多分类和类别标签映射恢复。
+
 依赖应从基础层流向组合层；数据和 IO 不得依赖具体模型。
 

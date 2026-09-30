@@ -83,12 +83,19 @@ public:
 class GradientDescent final : public Optimizer
 {
 public:
+    GradientDescent() noexcept;
+    explicit GradientDescent(double learning_rate) noexcept;
+
     OptimizationStepResult step(
         const OptimizationProblem& problem,
         const ParameterVector& parameters,
         OptimizerState& state,
         const OptimizerOptions& options
     ) const override;
+
+private:
+    double learning_rate_;
+    bool use_legacy_option_learning_rate_;
 };
 
 class NewtonOptimizer final : public Optimizer

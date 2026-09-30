@@ -104,6 +104,12 @@ OptimizationStepResult GradientDescent::step(
 ) const
 {
     validateOptions(options);
+    const double learning_rate = use_legacy_option_learning_rate_
+        ? options.learning_rate : learning_rate_;
+    if (!std::isfinite(learning_rate) || learning_rate <= 0.0)
+    {
+        throw std::invalid_argument("Gradient descent learning rate must be positive and finite");
+    }
     validateParameters(parameters);
 
     const double current_value = problem.value(parameters);
@@ -113,7 +119,7 @@ OptimizationStepResult GradientDescent::step(
     validateGradient(parameters, current_gradient);
 
     const ParameterVector next_parameters =
-        parameters - options.learning_rate * current_gradient;
+        parameters - learning_rate * current_gradient;
     if (!next_parameters.allFinite())
     {
         throw std::runtime_error("Gradient descent produced a non-finite parameter");
@@ -126,6 +132,16 @@ OptimizationStepResult GradientDescent::step(
         current_value,
         (next_parameters - parameters).norm()
     };
+}
+
+GradientDescent::GradientDescent() noexcept
+    : learning_rate_(0.01), use_legacy_option_learning_rate_(true)
+{
+}
+
+GradientDescent::GradientDescent(double learning_rate) noexcept
+    : learning_rate_(learning_rate), use_legacy_option_learning_rate_(false)
+{
 }
 
 OptimizationStepResult NewtonOptimizer::step(
@@ -147,20 +163,12 @@ OptimizationStepResult NewtonOptimizer::step(
     const HessianMatrix current_hessian = problem.hessian(parameters);
     validateHessian(parameters, current_hessian);
 
-    Eigen::FullPivLU<HessianMatrix> rank_check(current_hessian);
-    if (rank_check.rank() < current_hessian.rows())
-    {
-        throw std::runtime_error("Hessian is singular");
-    }
-
-    Eigen::LDLT<HessianMatrix> solver(current_hessian);
-    if (solver.info() != Eigen::Success)
-    {
-        throw std::runtime_error("Failed to factorize Hessian");
-    }
-
+    // A rank-deficient Hessian still has a well-defined least-norm Newton
+    // direction. CompleteOrthogonalDecomposition avoids rejecting valid
+    // logistic problems after sigmoid curvature becomes numerically small.
+    Eigen::CompleteOrthogonalDecomposition<HessianMatrix> solver(current_hessian);
     const ParameterVector direction = solver.solve(current_gradient);
-    if (solver.info() != Eigen::Success || !direction.allFinite())
+    if (!direction.allFinite())
     {
         throw std::runtime_error("Failed to solve Newton step");
     }

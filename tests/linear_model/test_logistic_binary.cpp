@@ -15,6 +15,7 @@
  * ============================================================================
  */
 #include "art/linear_model/logistic_regression.h"
+#include "art/optim/optimizer.h"
 
 #include <Eigen/Dense>
 
@@ -23,6 +24,7 @@
 #include <cmath>
 #include <iostream>
 #include <iomanip>
+#include <stdexcept>
 
 int main()
 {
@@ -85,6 +87,57 @@ int main()
               << ", precision=" << precision
               << ", recall=" << recall
               << ", F1=" << f1 << '\n';
+
+    art::optim::GradientDescent explicit_gradient(0.001);
+    art::linear_model::LogisticRegression explicit_model;
+    explicit_model.fit(features, targets, explicit_gradient);
+    assert(explicit_model.score(features, targets) == 1.0);
+
+    art::optim::NewtonOptimizer newton;
+    art::linear_model::LogisticRegression newton_model;
+    newton_model.fit(features, targets, newton);
+    assert(newton_model.score(features, targets) == 1.0);
+    assert(!newton_model.training_history().empty());
+    assert(newton_model.training_history().front().gradient_norm >= 0.0);
+
+    art::linear_model::LogisticRegressionOptions regularized_options;
+    regularized_options.l2_penalty = 0.1;
+    art::linear_model::LogisticRegression regularized_model(
+        regularized_options
+    );
+    regularized_model.fit(features, targets);
+    assert(regularized_model.score(features, targets) == 1.0);
+
+    art::linear_model::LogisticRegressionOptions invalid_options;
+    invalid_options.l2_penalty = -1.0;
+    bool invalid_l2_rejected = false;
+    try
+    {
+        art::linear_model::LogisticRegression invalid_model(invalid_options);
+        invalid_model.fit(features, targets);
+    }
+    catch (const std::invalid_argument&)
+    {
+        invalid_l2_rejected = true;
+    }
+    assert(invalid_l2_rejected);
+
+    const Eigen::MatrixXd multiclass_features =
+        (Eigen::MatrixXd(3, 1) << -1.0, 0.0, 1.0).finished();
+    const Eigen::VectorXd multiclass_targets =
+        (Eigen::VectorXd(3) << 0.0, 1.0, 2.0).finished();
+    bool newton_rejected = false;
+    try
+    {
+        art::linear_model::LogisticRegression multiclass_model;
+        multiclass_model.fit(multiclass_features, multiclass_targets, newton);
+    }
+    catch (const std::invalid_argument&)
+    {
+        newton_rejected = true;
+    }
+    assert(newton_rejected);
+
     std::cout << "Binary logistic regression test Passed.\n";
     return 0;
 }

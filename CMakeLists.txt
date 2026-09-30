@@ -35,6 +35,7 @@ add_library(artemisml
     src/preprocessing/preprocessing.cpp
     src/preprocessing/label_encoder.cpp
     src/io/csvReader.cpp
+    src/io/model.cpp
     src/data/dataset.cpp
     src/optim/optimizer.cpp
     src/linear_model/linear_regression.cpp
@@ -82,6 +83,10 @@ add_test(NAME linear_regression COMMAND test_linear_regression WORKING_DIRECTORY
 add_executable(test_logistic_binary tests/linear_model/test_logistic_binary.cpp)
 target_link_libraries(test_logistic_binary PRIVATE artemisml)
 add_test(NAME logistic_binary COMMAND test_logistic_binary WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+add_executable(test_model_persistence tests/linear_model/test_model_persistence.cpp)
+target_link_libraries(test_model_persistence PRIVATE artemisml)
+add_test(NAME model_persistence COMMAND test_model_persistence WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 add_executable(test_base tests/base/test_base.cpp)
 target_link_libraries(test_base PRIVATE artemisml)
