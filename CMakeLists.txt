@@ -68,3 +68,7 @@ add_test(NAME dataset COMMAND test_dataset WORKING_DIRECTORY ${PROJECT_SOURCE_DI
 add_executable(test_pipeline tests/pipeline/test_pipeline.cpp)
 target_link_libraries(test_pipeline PRIVATE artemisml)
 add_test(NAME pipeline COMMAND test_pipeline WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+add_executable(test_autodiff tests/core/test_autodiff.cpp)
+target_link_libraries(test_autodiff PRIVATE artemisml)
+add_test(NAME autodiff COMMAND test_autodiff WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})

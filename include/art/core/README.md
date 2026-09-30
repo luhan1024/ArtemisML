@@ -12,9 +12,9 @@
 
 该层不依赖具体模型、数据格式或 Pipeline。
 
-## 自动求导规划
+## 自动求导
 
-自动求导建议采用 `Variable + GradientTape` 协议。标量目标函数为 (f(\\theta)) 时，反向模式计算：
+当前已实现 `Variable + GradientTape` 协议和标量反向模式。标量目标函数为 (f(\\theta)) 时，反向模式计算：
 
 [
 g_i = \\frac{\\partial f}{\\partial \\theta_i}
@@ -26,5 +26,5 @@ g_i = \\frac{\\partial f}{\\partial \\theta_i}
 H v = \\nabla_{\\theta}(\\nabla_{\\theta} f \\cdot v)
 ]
 
-第一阶段先稳定标量反向模式，再扩展 Jacobian、Hessian-vector product 和高阶导数。
+当前支持基本加减乘除、`exp` 和 `log`；后续扩展 Jacobian、Hessian-vector product 和高阶导数。
 

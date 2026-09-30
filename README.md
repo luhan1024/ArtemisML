@@ -76,9 +76,9 @@ ArtemisML/
 - [测试总览](tests/README.md)
 - 各功能层的 API、公式、算法和完成度说明位于对应目录的 README。
 
-自动求导是当前接口标准的下一项核心基础设施。规划中的 
-`art::core::autodiff` 将提供 `Variable`、`GradientTape`、梯度、Jacobian、Hessian-vector product 等协议，
-供 `GradientDescent`、`AdaGrad`、`Adam` 和 `NewtonOptimizer` 统一使用。
+自动求导是当前接口标准的核心基础设施。当前已实现
+`art::core::autodiff::Variable`、`GradientTape`、标量反向模式梯度以及
+`exp/log` 运算；Jacobian、Hessian 和 Hessian-vector product 将在兼容现有协议的基础上继续扩展。
 
 ## 当前已实现功能
 
@@ -140,6 +140,7 @@ ArtemisML/
 - `art::optim::GradientDescent`
 - `art::optim::NewtonOptimizer`
 - `art::optim::OptimizationProblem`
+- `art::core::autodiff::GradientTape` 标量反向模式梯度。
 
 线性回归和 Ridge 支持目标函数、梯度、Hessian、训练、预测和回归评分。LogisticRegression 当前明确标记为尚未实现，不作为可用分类模型发布。
 
@@ -153,6 +154,7 @@ ArtemisML/
 - `base`
 - `dataset`
 - `pipeline`
+- `autodiff`
 
 最近一次验证结果：
 
