@@ -20,8 +20,23 @@
 #include "art/base/regressor.h"
 #include "art/optim/optimizer.h"
 
+#include <filesystem>
+#include <string>
+
+namespace art
+{
+    class Model;
+}
+
 namespace art::linear_model
 {
+    struct RegressionMetrics
+    {
+        double mean_squared_error = 0.0;
+        double mean_absolute_error = 0.0;
+        double r2_score = 0.0;
+    };
+
     using data::Dataset;
     using optim::HessianMatrix;
     using optim::OptimizationProblem;
@@ -61,6 +76,23 @@ namespace art::linear_model
             const Eigen::MatrixXd& features,
             const Eigen::VectorXd& labels
         ) const;
+        double mean_absolute_error(
+            const Eigen::MatrixXd& features,
+            const Eigen::VectorXd& labels
+        ) const;
+        double r2_score(
+            const Eigen::MatrixXd& features,
+            const Eigen::VectorXd& labels
+        ) const;
+        RegressionMetrics evaluate(
+            const Eigen::MatrixXd& features,
+            const Eigen::VectorXd& labels
+        ) const;
+
+        void save(const std::filesystem::path& path) const;
+        const char* type_name() const noexcept;
+        std::size_t max_iterations() const noexcept;
+        double tolerance() const noexcept;
 
         const ParameterVector& parameters() const;
         std::size_t feature_count() const;
@@ -71,8 +103,19 @@ namespace art::linear_model
         double do_score(const base::FeatureInput& features, const base::TargetInput& targets) const override;
 
     private:
+        friend class ::art::Model;
+
+        void restore_state(
+            const ParameterVector& parameters,
+            std::size_t feature_count,
+            std::size_t max_iterations,
+            double tolerance
+        );
+
         ParameterVector parameters_;
         std::size_t feature_count_ = 0;
+        std::size_t max_iterations_ = 0;
+        double tolerance_ = 0.0;
         bool fitted_ = false;
     };
 }

@@ -16,13 +16,16 @@
  */
 #pragma once
 
+#include "art/linear_model/linear_regression.h"
 #include "art/linear_model/logistic_regression.h"
+#include "art/linear_model/ridge.h"
 
 #include <Eigen/Dense>
 
 #include <filesystem>
 #include <memory>
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace art
@@ -38,6 +41,10 @@ namespace art
             const Eigen::MatrixXd& features,
             const Eigen::VectorXd& targets
         ) const;
+        linear_model::RegressionMetrics regression_metrics(
+            const Eigen::MatrixXd& features,
+            const Eigen::VectorXd& targets
+        ) const;
         void save(const std::filesystem::path& path) const;
 
     private:
@@ -45,12 +52,29 @@ namespace art
             const linear_model::LogisticRegression& model,
             const std::string& path
         );
+        friend void save(
+            const linear_model::LinearRegression& model,
+            const std::string& path
+        );
+        friend void save(
+            const linear_model::Ridge& model,
+            const std::string& path
+        );
+        friend void save(
+            const linear_model::RidgeClassifier& model,
+            const std::string& path
+        );
         friend void save(const Model& model, const std::string& path);
         friend Model load(const std::string& path);
 
-        explicit Model(
-            std::shared_ptr<linear_model::LogisticRegression> model
-        );
+        using Storage = std::variant<
+            std::shared_ptr<linear_model::LogisticRegression>,
+            std::shared_ptr<linear_model::LinearRegression>,
+            std::shared_ptr<linear_model::Ridge>,
+            std::shared_ptr<linear_model::RidgeClassifier>
+        >;
+
+        explicit Model(Storage model);
 
         void restore_state(
             const Eigen::MatrixXd& coefficients,
@@ -60,11 +84,40 @@ namespace art
             const linear_model::LogisticRegressionOptions& options,
             const std::vector<std::string>& class_labels
         );
-        std::shared_ptr<linear_model::LogisticRegression> model_;
+        void restore_linear_state(
+            const Eigen::VectorXd& parameters,
+            std::size_t feature_count,
+            std::size_t max_iterations,
+            double tolerance
+        );
+        void restore_ridge_state(
+            const Eigen::VectorXd& parameters,
+            std::size_t feature_count,
+            double alpha,
+            std::size_t iterations,
+            bool converged
+        );
+        void restore_ridge_classifier_state(
+            const Eigen::MatrixXd& coefficients,
+            std::size_t feature_count,
+            std::size_t class_count,
+            double alpha,
+            const std::vector<std::string>& labels
+        );
+        Storage model_;
     };
 
     void save(
         const linear_model::LogisticRegression& model,
+        const std::string& path
+    );
+    void save(
+        const linear_model::LinearRegression& model,
+        const std::string& path
+    );
+    void save(const linear_model::Ridge& model, const std::string& path);
+    void save(
+        const linear_model::RidgeClassifier& model,
         const std::string& path
     );
     void save(const Model& model, const std::string& path);

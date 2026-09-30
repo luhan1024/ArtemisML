@@ -9,6 +9,9 @@
 - `MeanSquaredError`、`MeanAbsoluteError`。
 - `BinaryCrossEntropy`：输入 logits，目标值在 `[0, 1]`。
 - `SoftmaxCrossEntropy`：输入 `N x C` logits，目标是 `N x C` one-hot 矩阵。
+
+Ridge 与 RidgeClassifier 使用现有 `MeanSquaredError` 的平方损失语义，并在模型层
+增加不惩罚截距项的 L2 正则化；不新增重复的分类平方损失。
 - `SparseCrossEntropy`：输入 `N x C` logits，目标是 `N` 个整数类别索引，首选 `Eigen::VectorXi`，也支持 `N x 1` 整数矩阵。
 
 `gradient()` 始终返回对 prediction/logits 的导数；target 被视为常量，不提供目标梯度。

@@ -18,7 +18,8 @@ IO 层报告格式错误和路径错误，不负责训练模型、填补缺失�
 `LabelVocabulary`。IO 不执行 one-hot、二分类或其他标签编码。
 
 模型持久化提供统一入口 `art::save(model, path)` 和 `art::load(path)`。
-第一版支持 `linear_model::LogisticRegression`，使用带 `ARTEMISML_MODEL` 签名和
+第一版支持 `linear_model::LogisticRegression`、`LinearRegression`、`Ridge` 和
+`RidgeClassifier`，使用带 `ARTEMISML_MODEL` 签名和
 格式版本的单文件文本格式。加载时验证签名、版本、类型、矩阵维度、类别数量和
 有限值，不执行文件中的代码。
 
