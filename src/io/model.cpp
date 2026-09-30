@@ -199,6 +199,46 @@ namespace
             output << '\n';
         }
     }
+
+    void write_model(const linear_model::Lasso& model, const std::string& path)
+    {
+        if (!model.is_fitted()) throw std::logic_error("Cannot save an unfitted model");
+        std::ofstream output(path, std::ios::out | std::ios::trunc);
+        if (!output.is_open()) throw std::runtime_error("Failed to open model file for writing: " + path);
+        output << signature << '\n';
+        write_field(output, "format_version", format_version);
+        output << "type_name " << std::quoted(std::string(model.type_name())) << '\n';
+        write_field(output, "fitted", 1);
+        write_field(output, "feature_count", model.feature_count());
+        write_field(output, "alpha", model.alpha());
+        write_field(output, "l1_ratio", 1.0);
+        const Eigen::VectorXd& parameters = model.parameters();
+        write_field(output, "parameter_count", parameters.size());
+        output << "parameters\n" << std::setprecision(17);
+        for (Eigen::Index index = 0; index < parameters.size(); ++index)
+            output << parameters(index) << ' ';
+        output << '\n';
+    }
+
+    void write_model(const linear_model::ElasticNet& model, const std::string& path)
+    {
+        if (!model.is_fitted()) throw std::logic_error("Cannot save an unfitted model");
+        std::ofstream output(path, std::ios::out | std::ios::trunc);
+        if (!output.is_open()) throw std::runtime_error("Failed to open model file for writing: " + path);
+        output << signature << '\n';
+        write_field(output, "format_version", format_version);
+        output << "type_name " << std::quoted(std::string(model.type_name())) << '\n';
+        write_field(output, "fitted", 1);
+        write_field(output, "feature_count", model.feature_count());
+        write_field(output, "alpha", model.alpha());
+        write_field(output, "l1_ratio", model.l1_ratio());
+        const Eigen::VectorXd& parameters = model.parameters();
+        write_field(output, "parameter_count", parameters.size());
+        output << "parameters\n" << std::setprecision(17);
+        for (Eigen::Index index = 0; index < parameters.size(); ++index)
+            output << parameters(index) << ' ';
+        output << '\n';
+    }
 }
 
 Model::Model(Storage model)
@@ -284,6 +324,29 @@ void Model::restore_ridge_classifier_state(
     );
 }
 
+void Model::restore_lasso_state(
+    const Eigen::VectorXd& parameters,
+    std::size_t feature_count,
+    double alpha
+)
+{
+    auto model = std::get_if<std::shared_ptr<linear_model::Lasso>>(&model_);
+    if (model == nullptr || !*model) throw std::logic_error("Model type mismatch");
+    (*model)->restore_state(parameters, feature_count, alpha);
+}
+
+void Model::restore_elastic_net_state(
+    const Eigen::VectorXd& parameters,
+    std::size_t feature_count,
+    double alpha,
+    double l1_ratio
+)
+{
+    auto model = std::get_if<std::shared_ptr<linear_model::ElasticNet>>(&model_);
+    if (model == nullptr || !*model) throw std::logic_error("Model type mismatch");
+    (*model)->restore_state(parameters, feature_count, alpha, l1_ratio);
+}
+
 std::string Model::type_name() const
 {
     return std::visit([](const auto& model) -> std::string {
@@ -360,6 +423,13 @@ linear_model::RegressionMetrics Model::regression_metrics(
                 model->r2_score(features, targets)
             };
         }
+        else if constexpr (std::is_same_v<ModelPointer,
+            std::shared_ptr<linear_model::Lasso>> ||
+            std::is_same_v<ModelPointer,
+            std::shared_ptr<linear_model::ElasticNet>>)
+        {
+            return model->evaluate(features, targets);
+        }
         else
         {
             throw std::logic_error(
@@ -396,6 +466,16 @@ void save(const linear_model::Ridge& model, const std::string& path)
 }
 
 void save(const linear_model::RidgeClassifier& model, const std::string& path)
+{
+    write_model(model, path);
+}
+
+void save(const linear_model::Lasso& model, const std::string& path)
+{
+    write_model(model, path);
+}
+
+void save(const linear_model::ElasticNet& model, const std::string& path)
 {
     write_model(model, path);
 }
@@ -544,6 +624,41 @@ Model load(const std::string& path)
         Model result(std::move(model));
         result.restore_ridge_classifier_state(
             coefficients, feature_count, class_count, alpha, labels
+        );
+        return result;
+    }
+
+    if (type_name == "art::linear_model::Lasso" ||
+        type_name == "art::linear_model::ElasticNet")
+    {
+        const std::size_t feature_count = read_field<std::size_t>(input, "feature_count");
+        const double alpha = read_field<double>(input, "alpha");
+        const double l1_ratio = read_field<double>(input, "l1_ratio");
+        const std::size_t parameter_count = read_field<std::size_t>(input, "parameter_count");
+        if (feature_count == 0 || feature_count > maximum_dimension ||
+            parameter_count != feature_count + 1 || parameter_count > maximum_dimension ||
+            !std::isfinite(alpha) || alpha < 0.0 || !std::isfinite(l1_ratio) ||
+            l1_ratio < 0.0 || l1_ratio > 1.0 ||
+            (type_name == "art::linear_model::Lasso" && l1_ratio != 1.0))
+            throw std::runtime_error("Invalid regularized regression metadata");
+        expect_key(input, "parameters");
+        Eigen::VectorXd parameters(static_cast<Eigen::Index>(parameter_count));
+        for (Eigen::Index index = 0; index < parameters.size(); ++index)
+        {
+            if (!(input >> parameters(index)) || !std::isfinite(parameters(index)))
+                throw std::runtime_error("Invalid regularized regression parameter value");
+        }
+        if (type_name == "art::linear_model::Lasso")
+        {
+            auto model = std::make_shared<linear_model::Lasso>();
+            Model result(std::move(model));
+            result.restore_lasso_state(parameters, feature_count, alpha);
+            return result;
+        }
+        auto model = std::make_shared<linear_model::ElasticNet>();
+        Model result(std::move(model));
+        result.restore_elastic_net_state(
+            parameters, feature_count, alpha, l1_ratio
         );
         return result;
     }

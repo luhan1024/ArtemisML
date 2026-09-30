@@ -42,6 +42,7 @@ add_library(artemisml
     src/pipeline/pipeline.cpp
     src/pipeline/feature_union.cpp
     src/linear_model/ridge.cpp
+    src/linear_model/regularized_regression.cpp
     src/linear_model/logistic_regression.cpp
     src/loss/loss.cpp
     src/model_selection/train_test_split.cpp
@@ -87,6 +88,10 @@ add_test(NAME logistic_binary COMMAND test_logistic_binary WORKING_DIRECTORY ${P
 add_executable(test_model_persistence tests/linear_model/test_model_persistence.cpp)
 target_link_libraries(test_model_persistence PRIVATE artemisml)
 add_test(NAME model_persistence COMMAND test_model_persistence WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+add_executable(test_regularized_regression tests/linear_model/test_regularized_regression.cpp)
+target_link_libraries(test_regularized_regression PRIVATE artemisml)
+add_test(NAME regularized_regression COMMAND test_regularized_regression WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 add_executable(test_base tests/base/test_base.cpp)
 target_link_libraries(test_base PRIVATE artemisml)
