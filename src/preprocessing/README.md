@@ -1,9 +1,19 @@
 # src/preprocessing
 
-该目录实现 `include/art/preprocessing` 中声明的 ArtemisML preprocessing 层公共接口。
+该目录以 `preprocessing.cpp` 实现公共头文件中的数值矩阵转换器，依赖方向为
+`preprocessing -> base`，数值运算由 Eigen 提供；不依赖 `io`、`pipeline`、模型、指标、
+模型选择或优化器。
 
-## 实现边界
+## 实现约定
 
-实现必须遵循对应公共 README 中的职责、公式和状态约束，不得在源码层新增未讨论的公共 API。算法、错误处理和边界条件应通过 `tests/preprocessing` 验证。
+- 公共生命周期由 `art::base::Transformer` 提供，具体类只实现 `do_fit` 和
+  `do_transform`。
+- `fit` 失败后由 base 协议保持未训练状态；转换器自身在 fit 阶段保存输入宽度和
+  统计量，transform 阶段拒绝宽度变化。
+- 所有本层转换器保持样本行数；`OneHotEncoder`、`ColumnTransformer` 和
+  `PolynomialFeatures` 可以改变特征列数。
+- 输入为空、列索引越界、重复选择、非有限数值、未知类别和全缺失均按公共 README
+  约定抛出 `std::invalid_argument`；未 fit 由 `base::NotFittedError` 处理。
 
-源码修改完成后，必须由程序员0安排唯一的 WSL 构建验证；验证通过后自动提交并推送。
+本轮只完成静态源码与测试准备。WSL 配置、编译、CTest 和提交推送由程序员0统一调度，
+不得由本线程启动。

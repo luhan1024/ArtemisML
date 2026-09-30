@@ -46,7 +46,8 @@ ArtemisML/
 │   ├── linear_model/
 │   ├── metrics/
 │   ├── model_selection/
-│   └── optim/
+│   ├── optim/
+│   └── loss/
 ├── src/
 │   ├── core/
 │   ├── data/
@@ -57,7 +58,8 @@ ArtemisML/
 │   ├── linear_model/
 │   ├── metrics/
 │   ├── model_selection/
-│   └── optim/
+│   ├── optim/
+│   └── loss/
 ├── tests/
 ├── third_party/eigen/
 ├── CMakeLists.txt
@@ -79,6 +81,10 @@ ArtemisML/
 自动求导是当前接口标准的核心基础设施。当前已实现
 `art::core::autodiff::Variable`、`GradientTape`、标量反向模式梯度以及
 `exp/log` 运算；Jacobian、Hessian 和 Hessian-vector product 将在兼容现有协议的基础上继续扩展。
+
+损失函数位于 `art::loss`，提供 MSE、MAE、logits 形式 BCE、Softmax Cross Entropy
+和 Sparse Cross Entropy。损失梯度是对 prediction/logits 的解析梯度，Mean/Sum
+缩放语义与目标编码要求见 [loss 公共 API](include/art/loss/README.md)。
 
 ## 当前已实现功能
 
@@ -144,6 +150,21 @@ ArtemisML/
 
 线性回归和 Ridge 支持目标函数、梯度、Hessian、训练、预测和回归评分。LogisticRegression 当前明确标记为尚未实现，不作为可用分类模型发布。
 
+### 损失函数
+
+当前提供：
+
+- `art::loss::LossFunction`
+- `art::loss::Reduction::Mean` 与 `art::loss::Reduction::Sum`
+- `art::loss::MeanSquaredError`
+- `art::loss::MeanAbsoluteError`
+- `art::loss::BinaryCrossEntropy`
+- `art::loss::SoftmaxCrossEntropy`
+- `art::loss::SparseCrossEntropy`
+
+BCE 和 Softmax Cross Entropy 直接接收 logits，并使用稳定的数值公式。第一阶段暂不
+实现 AdaGrad、Adam、FocalLoss 或其他扩展损失。
+
 ## 当前测试
 
 当前已注册并通过的 WSL CTest 包括：
@@ -155,11 +176,16 @@ ArtemisML/
 - `dataset`
 - `pipeline`
 - `autodiff`
+- `preprocessing`
+- `loss`
+- `core_types`
+- `data_api`
+- `model_selection`
 
-最近一次验证结果：
+最近一次完整验证结果：
 
 ```text
-100% tests passed out of 6
+100% tests passed out of 12
 ```
 
 ## 构建与测试
@@ -185,6 +211,7 @@ ctest --test-dir build-wsl --output-on-failure
 - `model_selection`。
 - 完整的 `LogisticRegression`。
 - 更完整的 DataFrame 选择、连接、分组和聚合操作。
+- 更丰富的损失函数和矩阵级自动求导支持。
 
 这些模块应在现有层级基础上逐步实现，不应通过空实现或未经讨论的 API 重命名掩盖未完成状态。
 

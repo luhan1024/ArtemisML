@@ -1,7 +1,17 @@
 # tests/preprocessing
 
-该目录验证 preprocessing 层公共接口的行为、边界条件和错误语义。
+`test_preprocessing.cpp` 从用户可见 API 验证：
 
-测试应优先从用户可见 API 出发，覆盖正常路径、空输入、维度错误、状态错误和数值稳定性。若该层仍处于预留阶段，应记录当前未实现状态，不能用空测试掩盖缺口。
+- 未 fit 调用 `transform`、重复 fit 和输入维度错误；
+- StandardScaler 的均值/尺度变换与 MinMaxScaler 的目标范围；
+- Imputer 的均值、常数策略和 `NaN` 缺失语义；
+- OneHotEncoder 的类别顺序、未知类别 `Ignore`/`Error` 行为和列数变化；
+- ColumnTransformer 的按列组合、行数保持和输出列数；
+- SelectColumns 与 PolynomialFeatures 的基础特征选择/生成。
 
-对应设计说明：`include/art/preprocessing/README.md`。
+测试只覆盖数值矩阵边界，不伪造字符串 DataFrame API。建议由程序员0统一串行执行唯一
+验证命令：
+
+```bash
+cmake -S . -B build-wsl && cmake --build build-wsl && ctest --test-dir build-wsl --output-on-failure
+```

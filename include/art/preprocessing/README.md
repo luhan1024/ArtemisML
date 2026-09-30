@@ -1,21 +1,39 @@
 # art::preprocessing
 
-## 职责
+## 职责与输入边界
 
-该层提供类似 sklearn 的可训练转换器：
+该层提供基于 `Eigen::MatrixXd` 的、类似 scikit-learn 的可训练转换器。
+当前 `base::Transformer` 协议只接受数值矩阵，因此分类特征在进入
+`OneHotEncoder` 前必须已经表示为有限数值；字符串 `DataFrame` 转换仍属于
+`data`/`io` 层，不在本层读取 CSV 或解析字符串。
 
-- `StandardScaler)
-- `MinMaxScaler)
-- `Imputer)
-- `OneHotEncoder)
-- `ColumnTransformer)
-- 特征选择和特征生成器
+所有转换器都遵循：`fit` 只从训练矩阵学习状态，`transform` 只使用已保存状态，
+`fit_transform` 等价于一次 `fit` 后对同一输入执行一次 `transform`。未 fit、空输入、
+维度不匹配和不支持的非有限值会抛出明确异常；行数保持不变，列数由转换器决定。
 
-转换器必须区分 `fit)、`transform` 和 `fit_transform)。训练阶段保存统计量，例如标准化：
+## 已实现 API
 
-[
-z_{ij}=\\frac{x_{ij}-\\mu_j}{\\sigma_j}
-]
+- `StandardScaler`：按列保存均值和总体标准差，使用
+  `z_{ij}=(x_{ij}-\mu_j)/s_j`；常数列的尺度取 `1`。
+- `MinMaxScaler`：按列保存训练集最小值和最大值，映射到配置的 `[lower, upper]`；
+  常数列映射为 `lower`。
+- `Imputer`：`Mean` 忽略 `NaN` 计算列均值，`Constant` 使用固定填充值；只有
+  `NaN` 被视为缺失，正负无穷会被拒绝。均值策略的全缺失列拒绝 fit。
+- `OneHotEncoder`：按输入列独立学习升序类别，输出列顺序为输入列顺序再接该列的
+  类别升序；未知类别可选择 `Error` 或 `Ignore`（后者输出全零块）。当前类别为有限
+  数值，类别查找使用精确 `double` 相等，不支持字符串或自动排序混合类型。
+- `ColumnTransformer`：按不重叠的列索引选择输入，按 specification 声明顺序 fit、
+  transform 并横向拼接；未声明列丢弃，子转换器必须保持样本数。
+- `SelectColumns`：按固定列索引选择并重排特征。
+- `PolynomialFeatures`：生成包含偏置项（可选）及一阶到指定阶数的、有序组合重复单项式。
 
-预测阶段只能使用训练阶段保存的参数，不能重新计算数据集统计量。
+## 防止数据泄漏
+
+统计量、类别集合、输入宽度和输出宽度均只在 `fit` 阶段建立。`transform` 只校验输入
+宽度并读取这些已保存状态，不会从测试输入重新计算均值、范围或类别。
+
+## 完成度
+
+上述数值矩阵 API、生命周期和边界检查已实现；DataFrame 列名选择、字符串分类值、
+缺失值 dtype 体系和 remainder/passthrough 语义仍待稳定的 `data` API 后再扩展。
 

@@ -16,6 +16,7 @@ add_library(artemisml
     src/base/predictor.cpp
     src/base/regressor.cpp
     src/base/transformer.cpp
+    src/preprocessing/preprocessing.cpp
     src/io/csvReader.cpp
     src/data/dataset.cpp
     src/optim/optimizer.cpp
@@ -24,6 +25,10 @@ add_library(artemisml
     src/pipeline/feature_union.cpp
     src/linear_model/ridge.cpp
     src/linear_model/logistic_regression.cpp
+    src/loss/loss.cpp
+    src/model_selection/train_test_split.cpp
+    src/model_selection/cross_validate.cpp
+    src/model_selection/grid_search.cpp
 )
 
 target_include_directories(artemisml
@@ -72,3 +77,23 @@ add_test(NAME pipeline COMMAND test_pipeline WORKING_DIRECTORY ${PROJECT_SOURCE_
 add_executable(test_autodiff tests/core/test_autodiff.cpp)
 target_link_libraries(test_autodiff PRIVATE artemisml)
 add_test(NAME autodiff COMMAND test_autodiff WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+add_executable(test_preprocessing tests/preprocessing/test_preprocessing.cpp)
+target_link_libraries(test_preprocessing PRIVATE artemisml)
+add_test(NAME preprocessing COMMAND test_preprocessing WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+add_executable(test_loss tests/loss/test_loss.cpp)
+target_link_libraries(test_loss PRIVATE artemisml)
+add_test(NAME loss COMMAND test_loss WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+add_executable(test_core_types tests/core/test_core_types.cpp)
+target_link_libraries(test_core_types PRIVATE artemisml)
+add_test(NAME core_types COMMAND test_core_types WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+add_executable(test_data_api tests/data/test_data_api.cpp)
+target_link_libraries(test_data_api PRIVATE artemisml)
+add_test(NAME data_api COMMAND test_data_api WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+add_executable(test_model_selection tests/model_selection/test_model_selection.cpp)
+target_link_libraries(test_model_selection PRIVATE artemisml)
+add_test(NAME model_selection COMMAND test_model_selection WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
