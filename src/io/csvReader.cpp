@@ -172,6 +172,17 @@ art::data::DataFrame CsvReader::read(const std::string& filename) const
     return data_frame;
 }
 
+art::data::TextLabelDataset CsvReader::read_text_label_dataset(
+    const std::string& filename,
+    const std::string& label_column,
+    const std::vector<std::string>& feature_columns
+) const
+{
+    return art::data::TextLabelDataset::from_dataframe(
+        read(filename), label_column, feature_columns
+    );
+}
+
 void CsvReader::write(
     const std::string& filename,
     const art::data::DataFrame& data_frame

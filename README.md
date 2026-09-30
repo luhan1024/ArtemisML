@@ -96,7 +96,14 @@ ArtemisML/
 - CSV 格式错误、列数不一致和未闭合引号检查。
 - `art::data::DataFrame` 基础表格容器。
 - `art::data::Dataset` 从 CSV 或 DataFrame 提取数值特征与标签。
+- `art::data::TextLabelDataset` 保留文本特征与文本标签。
+- `art::data::LabelVocabulary` 按首次出现顺序管理标签类别。
+- `art::io::CsvReader::read_text_label_dataset` 用于 Iris 等文本标签 CSV。
 - 特征列、标签列、重复列、空样本和非有限数值检查。
+
+文本标签编码由 `art::preprocessing::LabelEncoder` 负责，与 CSV 读取解耦：
+`Auto` 对二分类默认输出 `0/1`，对三分类及以上默认输出 one-hot；同时支持
+`BinarySigned` 的 `-1/1`、三分类 `SignedOrdinal` 的 `-1/0/1`、普通序数编码和显式 one-hot。
 
 ### 基础机器学习协议
 
@@ -147,6 +154,7 @@ ArtemisML/
 - `art::optim::NewtonOptimizer`
 - `art::optim::OptimizationProblem`
 - `art::core::autodiff::GradientTape` 标量反向模式梯度。
+- `art::preprocessing::LabelEncoder` 文本标签自动编码。
 
 线性回归和 Ridge 支持目标函数、梯度、Hessian、训练、预测和回归评分。LogisticRegression 当前明确标记为尚未实现，不作为可用分类模型发布。
 
@@ -177,6 +185,7 @@ BCE 和 Softmax Cross Entropy 直接接收 logits，并使用稳定的数值公�
 - `pipeline`
 - `autodiff`
 - `preprocessing`
+- `label_encoder`
 - `loss`
 - `core_types`
 - `data_api`
@@ -185,7 +194,7 @@ BCE 和 Softmax Cross Entropy 直接接收 logits，并使用稳定的数值公�
 最近一次完整验证结果：
 
 ```text
-100% tests passed out of 12
+100% tests passed out of 13
 ```
 
 ## 构建与测试

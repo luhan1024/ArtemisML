@@ -12,6 +12,9 @@
   统计量，transform 阶段拒绝宽度变化。
 - 所有本层转换器保持样本行数；`OneHotEncoder`、`ColumnTransformer` 和
   `PolynomialFeatures` 可以改变特征列数。
+- `LabelEncoder` 是独立的文本标签组件，不继承数值矩阵 `base::Transformer`；它在
+  `std::vector<std::string>` 上执行 fit/transform，输出 `Eigen::VectorXd` 或
+  `Eigen::MatrixXd`，避免把文本标签职责混入数值特征转换器。
 - 输入为空、列索引越界、重复选择、非有限数值、未知类别和全缺失均按公共 README
   约定抛出 `std::invalid_argument`；未 fit 由 `base::NotFittedError` 处理。
 

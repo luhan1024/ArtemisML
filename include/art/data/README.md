@@ -34,3 +34,8 @@ Dataset 仍是 data 层中从 DataFrame 到 Eigen 特征矩阵/标签向量的�
 `from_csv` 兼容入口；它不承担 fit、transform 或模型训练。数据层当前不实现完整 pandas
 动态类型、视图、广播、连接、分组和聚合。
 
+对于 Iris 等文本标签数据，`TextLabelDataset::from_dataframe` 保留特征字段和标签原文；
+`LabelVocabulary` 只按首次出现顺序建立去重词典和查找，不执行 one-hot、二分类或其他
+编码。数值 `Dataset::from_dataframe/from_csv` 的 double 标签行为保持不变，因此文本标签
+调用方应使用 IO 的 `CsvReader::read_text_label_dataset`，再由 preprocessing 决定编码策略。
+

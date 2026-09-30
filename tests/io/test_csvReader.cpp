@@ -142,6 +142,18 @@ assert(exception_caught);
     assert(selected_dataset.feature_names[0] == "height");
     assert(selected_dataset.features(0, 0) == 175.0);
 
+    const art::data::TextLabelDataset iris = reader.read_text_label_dataset(
+        "iris.csv", "species"
+    );
+    assert(iris.sample_count() == 30);
+    assert(iris.feature_count() == 5);
+    assert(iris.labels.at(0) == "setosa");
+    assert(iris.features.at(0, "sepal_length") == "5.1");
+    const art::data::LabelVocabulary vocabulary = iris.label_vocabulary();
+    assert(vocabulary.size() == 3);
+    assert(vocabulary.values()[0] == "setosa");
+    assert(vocabulary.index_of("setosa") == 0);
+
 std::cout << "CSV test passed.\n";
     return 0;
 }

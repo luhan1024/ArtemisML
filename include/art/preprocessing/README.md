@@ -26,6 +26,25 @@
   transform 并横向拼接；未声明列丢弃，子转换器必须保持样本数。
 - `SelectColumns`：按固定列索引选择并重排特征。
 - `PolynomialFeatures`：生成包含偏置项（可选）及一阶到指定阶数的、有序组合重复单项式。
+- `LabelEncoder`：独立于数值特征编码器处理 `std::vector<std::string>` 标签。支持
+  `Binary01`、`BinarySigned`、`SignedOrdinal`、`Ordinal`、`OneHot` 和 `Auto`；
+  `Auto` 对二分类选择 `Binary01`，对三分类及以上选择 `OneHot`，单类别退化为
+  `Ordinal`。
+
+## 文本标签编码语义
+
+`LabelEncoder` 在 `fit` 阶段按训练数据首次出现顺序建立稳定类别词典，后续
+`transform` 不会从测试标签添加类别。未知标签默认抛出异常，也可以配置为 `Ignore`：
+向量输出写入 `NaN`，OneHot 输出对应行全零。
+
+- `Binary01`：第一个训练类别为 `0`，第二个为 `1`。
+- `BinarySigned`：第一个训练类别为 `-1`，第二个为 `1`。
+- `SignedOrdinal`：三个训练类别依次为 `-1/0/1`。
+- `Ordinal`：类别依次为 `0,1,...`。
+- `OneHot`：输出列顺序为类别词典顺序，列名为 `<prefix>=<category>`。
+
+`transform` 返回 `EncodedTarget`（`std::variant<Eigen::VectorXd, Eigen::MatrixXd>`），
+也可通过 `transform_vector` 或 `transform_matrix` 使用与策略匹配的具体输出类型。
 
 ## 防止数据泄漏
 
@@ -34,6 +53,7 @@
 
 ## 完成度
 
-上述数值矩阵 API、生命周期和边界检查已实现；DataFrame 列名选择、字符串分类值、
-缺失值 dtype 体系和 remainder/passthrough 语义仍待稳定的 `data` API 后再扩展。
+上述数值矩阵和文本标签 API、生命周期和边界检查已实现；DataFrame 列名选择、
+字符串特征值、缺失值 dtype 体系和 remainder/passthrough 语义仍待稳定的 `data` API
+后再扩展。
 

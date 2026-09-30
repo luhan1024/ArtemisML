@@ -17,6 +17,7 @@ add_library(artemisml
     src/base/regressor.cpp
     src/base/transformer.cpp
     src/preprocessing/preprocessing.cpp
+    src/preprocessing/label_encoder.cpp
     src/io/csvReader.cpp
     src/data/dataset.cpp
     src/optim/optimizer.cpp
@@ -81,6 +82,10 @@ add_test(NAME autodiff COMMAND test_autodiff WORKING_DIRECTORY ${PROJECT_SOURCE_
 add_executable(test_preprocessing tests/preprocessing/test_preprocessing.cpp)
 target_link_libraries(test_preprocessing PRIVATE artemisml)
 add_test(NAME preprocessing COMMAND test_preprocessing WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+add_executable(test_label_encoder tests/preprocessing/test_label_encoder.cpp)
+target_link_libraries(test_label_encoder PRIVATE artemisml)
+add_test(NAME label_encoder COMMAND test_label_encoder WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 add_executable(test_loss tests/loss/test_loss.cpp)
 target_link_libraries(test_loss PRIVATE artemisml)

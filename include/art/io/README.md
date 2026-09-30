@@ -13,3 +13,7 @@
 
 IO 层报告格式错误和路径错误，不负责训练模型、填补缺失值或推断算法参数。
 
+`CsvReader::read_text_label_dataset` 是面向文本标签数据的兼容适配器：它将 CSV 原始
+字符串交给 data 层的 `TextLabelDataset`，保留标签文本并可生成首次出现顺序的
+`LabelVocabulary`。IO 不执行 one-hot、二分类或其他标签编码。
+
