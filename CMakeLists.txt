@@ -1,3 +1,10 @@
+# ============================================================================
+#                         A R T E M I S M L
+#                         A R T E M I S M L
+# ============================================================================
+# Project: ArtemisML - C++ machine learning library
+# Main contributors: Han Lu & Yihan Wang
+# ============================================================================
 cmake_minimum_required(VERSION 3.20)
 
 project(ArtemisML LANGUAGES CXX)

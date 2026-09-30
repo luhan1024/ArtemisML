@@ -1,3 +1,12 @@
+/*
+ * ============================================================================
+ *                         A R T E M I S M L
+ *                         A R T E M I S M L
+ * ============================================================================
+ * Project: ArtemisML - C++ machine learning library
+ * Main contributors: Han Lu & Yihan Wang
+ * ============================================================================
+ */
 #include "art/linear_model/ridge.h"
 
 #include "art/base/errors.h"
