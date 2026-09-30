@@ -158,14 +158,16 @@ ArtemisML/
 
 - `art::linear_model::LinearRegression`
 - `art::linear_model::Ridge`
-- `art::linear_model::LogisticRegression` 接口预留。
+- `art::linear_model::LogisticRegression`
 - `art::optim::GradientDescent`
 - `art::optim::NewtonOptimizer`
 - `art::optim::OptimizationProblem`
 - `art::core::autodiff::GradientTape` 标量反向模式梯度。
 - `art::preprocessing::LabelEncoder` 文本标签自动编码。
 
-线性回归和 Ridge 支持目标函数、梯度、Hessian、训练、预测和回归评分。LogisticRegression 当前明确标记为尚未实现，不作为可用分类模型发布。
+线性回归和 Ridge 支持目标函数、梯度、Hessian、训练、预测和回归评分。
+LogisticRegression 支持二分类 BCE 和多分类 Softmax Cross Entropy，训练使用梯度下降，
+并提供概率预测、类别预测和准确率评分。
 
 ### 损失函数
 
@@ -193,6 +195,7 @@ BCE 和 Softmax Cross Entropy 直接接收 logits，并使用稳定的数值公�
 - `dataset`
 - `pipeline`
 - `autodiff`
+- `logistic_binary`
 - `preprocessing`
 - `label_encoder`
 - `loss`
@@ -203,7 +206,7 @@ BCE 和 Softmax Cross Entropy 直接接收 logits，并使用稳定的数值公�
 最近一次完整验证结果：
 
 ```text
-100% tests passed out of 13
+100% tests passed out of 14
 ```
 
 ## 构建与测试
@@ -227,7 +230,6 @@ ctest --test-dir build-wsl --output-on-failure
 - `preprocessing`。
 - `metrics`。
 - `model_selection`。
-- 完整的 `LogisticRegression`。
 - 更完整的 DataFrame 选择、连接、分组和聚合操作。
 - 更丰富的损失函数和矩阵级自动求导支持。
 

@@ -4,9 +4,18 @@
 
 该层实现线性模型：
 
-- `LinearRegression)
-- `Ridge)
-- `LogisticRegression)
+- `LinearRegression`
+- `Ridge`
+- `LogisticRegression`
+
+`LogisticRegression` 当前支持：
+
+- 二分类 logits 与 Binary Cross Entropy；
+- 多分类 logits 与 Softmax Cross Entropy；
+- 梯度下降训练、停止条件和截距项；
+- `predict_proba`、`predict`、`score`；
+- 二分类系数矩阵为 `(feature_count + 1) × 1`，多分类系数矩阵为
+  `(feature_count + 1) × class_count`。
 
 线性回归最小二乘目标为：
 

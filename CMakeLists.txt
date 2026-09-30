@@ -79,6 +79,10 @@ add_executable(test_linear_regression tests/linear_model/test_linear_regression.
 target_link_libraries(test_linear_regression PRIVATE artemisml)
 add_test(NAME linear_regression COMMAND test_linear_regression WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
+add_executable(test_logistic_binary tests/linear_model/test_logistic_binary.cpp)
+target_link_libraries(test_logistic_binary PRIVATE artemisml)
+add_test(NAME logistic_binary COMMAND test_logistic_binary WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
 add_executable(test_base tests/base/test_base.cpp)
 target_link_libraries(test_base PRIVATE artemisml)
 add_test(NAME base COMMAND test_base WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
