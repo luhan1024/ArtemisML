@@ -15,6 +15,7 @@
  * ============================================================================
  */
 #include "art/linear_model/linear_regression.h"
+#include "art/io/model.h"
 
 #include <algorithm>
 #include <cmath>
@@ -190,6 +191,8 @@ OptimizationResult LinearRegression::fit(
 
     parameters_ = result.parameters;
     feature_count_ = dataset.feature_count();
+    max_iterations_ = options.max_iterations;
+    tolerance_ = options.tolerance;
     fitted_ = true;
     mark_fitted();
 
@@ -232,6 +235,70 @@ double LinearRegression::mean_squared_error(
 
     const Eigen::VectorXd residuals = predict(features) - labels;
     return residuals.squaredNorm() / static_cast<double>(labels.size());
+}
+
+double LinearRegression::mean_absolute_error(
+    const Eigen::MatrixXd& features,
+    const Eigen::VectorXd& labels
+) const
+{
+    if (labels.size() == 0 || features.rows() != labels.size())
+    {
+        throw std::invalid_argument(
+            "Prediction features and labels have different sample counts"
+        );
+    }
+    return (predict(features) - labels).array().abs().mean();
+}
+
+double LinearRegression::r2_score(
+    const Eigen::MatrixXd& features,
+    const Eigen::VectorXd& labels
+) const
+{
+    if (labels.size() == 0 || features.rows() != labels.size())
+    {
+        throw std::invalid_argument(
+            "Prediction features and labels have different sample counts"
+        );
+    }
+    const Eigen::VectorXd residuals = predict(features) - labels;
+    const double total = (labels.array() - labels.mean()).square().sum();
+    const double residual = residuals.squaredNorm();
+    return total == 0.0 ? (residual == 0.0 ? 1.0 : 0.0) :
+        1.0 - residual / total;
+}
+
+RegressionMetrics LinearRegression::evaluate(
+    const Eigen::MatrixXd& features,
+    const Eigen::VectorXd& labels
+) const
+{
+    return {
+        mean_squared_error(features, labels),
+        mean_absolute_error(features, labels),
+        r2_score(features, labels)
+    };
+}
+
+void LinearRegression::save(const std::filesystem::path& path) const
+{
+    art::save(*this, path.string());
+}
+
+const char* LinearRegression::type_name() const noexcept
+{
+    return "art::linear_model::LinearRegression";
+}
+
+std::size_t LinearRegression::max_iterations() const noexcept
+{
+    return max_iterations_;
+}
+
+double LinearRegression::tolerance() const noexcept
+{
+    return tolerance_;
 }
 
 void LinearRegression::do_fit(
@@ -296,5 +363,28 @@ const ParameterVector& LinearRegression::parameters() const
 std::size_t LinearRegression::feature_count() const
 {
     return feature_count_;
+}
+
+void LinearRegression::restore_state(
+    const ParameterVector& parameters,
+    std::size_t feature_count,
+    std::size_t max_iterations,
+    double tolerance
+)
+{
+    if (feature_count == 0 ||
+        parameters.size() != static_cast<Eigen::Index>(feature_count + 1) ||
+        !parameters.allFinite() || max_iterations == 0 ||
+        !std::isfinite(tolerance) || tolerance < 0.0)
+    {
+        throw std::invalid_argument("Invalid LinearRegression serialized state");
+    }
+    mark_unfitted();
+    parameters_ = parameters;
+    feature_count_ = feature_count;
+    max_iterations_ = max_iterations;
+    tolerance_ = tolerance;
+    fitted_ = true;
+    mark_fitted();
 }
 }
