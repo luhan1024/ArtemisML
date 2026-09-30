@@ -179,7 +179,8 @@ namespace
         Eigen::Index parameter_count,
         double learning_rate,
         std::size_t max_iterations,
-        double tolerance
+        double tolerance,
+        std::vector<double>& loss_history
     )
     {
         if (!std::isfinite(learning_rate) || learning_rate <= 0.0 ||
@@ -197,11 +198,14 @@ namespace
         optim::ParameterVector parameters =
             optim::ParameterVector::Zero(parameter_count);
         optim::OptimizerState state;
+        loss_history.clear();
+        loss_history.reserve(max_iterations);
         for (std::size_t iteration = 0; iteration < max_iterations; ++iteration)
         {
             const optim::OptimizationStepResult step = optimizer.step(
                 problem, parameters, state, options
             );
+            loss_history.push_back(step.objective_value);
             parameters = step.parameters;
             if (step.step_norm <= tolerance) break;
         }
@@ -231,11 +235,13 @@ void LogisticRegression::do_fit(
     const Eigen::Index classes = class_count_from_targets(targets);
     const Eigen::MatrixXd design = add_intercept(features);
     optim::ParameterVector parameters;
+    std::vector<double> loss_history;
     if (classes == 2)
     {
         BinaryProblem problem(design, targets);
         parameters = optimize(
-            problem, design.cols(), learning_rate_, max_iterations_, tolerance_
+            problem, design.cols(), learning_rate_, max_iterations_, tolerance_,
+            loss_history
         );
     }
     else
@@ -243,7 +249,7 @@ void LogisticRegression::do_fit(
         MulticlassProblem problem(design, one_hot(targets, classes));
         parameters = optimize(
             problem, design.cols() * classes,
-            learning_rate_, max_iterations_, tolerance_
+            learning_rate_, max_iterations_, tolerance_, loss_history
         );
     }
 
@@ -253,6 +259,7 @@ void LogisticRegression::do_fit(
     );
     feature_count_ = static_cast<std::size_t>(features.cols());
     class_count_ = static_cast<std::size_t>(classes);
+    loss_history_ = std::move(loss_history);
 }
 
 Eigen::MatrixXd LogisticRegression::predict_proba(
@@ -327,6 +334,11 @@ double LogisticRegression::do_score(
 std::size_t LogisticRegression::class_count() const noexcept
 {
     return class_count_;
+}
+
+const std::vector<double>& LogisticRegression::loss_history() const noexcept
+{
+    return loss_history_;
 }
 
 const Eigen::MatrixXd& LogisticRegression::coefficients() const

@@ -21,6 +21,7 @@
 #include <Eigen/Dense>
 
 #include <cstddef>
+#include <vector>
 
 namespace art::linear_model
 {
@@ -40,6 +41,7 @@ namespace art::linear_model
         ) const;
 
         std::size_t class_count() const noexcept;
+        const std::vector<double>& loss_history() const noexcept;
         // Rows include the intercept; binary models use one logit column,
         // while multiclass models use one column per class.
         const Eigen::MatrixXd& coefficients() const;
@@ -56,5 +58,6 @@ namespace art::linear_model
         Eigen::MatrixXd coefficients_;
         std::size_t feature_count_ = 0;
         std::size_t class_count_ = 0;
+        std::vector<double> loss_history_;
     };
 }

@@ -14,6 +14,7 @@
 - 多分类 logits 与 Softmax Cross Entropy；
 - 梯度下降训练、停止条件和截距项；
 - `predict_proba`、`predict`、`score`；
+- `loss_history` 用于查看每一步梯度下降的目标函数值；
 - 二分类系数矩阵为 `(feature_count + 1) × 1`，多分类系数矩阵为
   `(feature_count + 1) × class_count`。
 
