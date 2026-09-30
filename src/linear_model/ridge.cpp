@@ -186,12 +186,24 @@ double Ridge::r2_score(
     return r2(predict(features), labels);
 }
 
+RegressionMetrics Ridge::evaluate(
+    const Eigen::MatrixXd& features,
+    const Eigen::VectorXd& labels
+) const
+{
+    return {
+        mean_squared_error(features, labels),
+        mean_absolute_error(features, labels),
+        r2_score(features, labels)
+    };
+}
+
 void Ridge::save(const std::filesystem::path& path) const
 {
     art::save(*this, path.string());
 }
 
-const char* Ridge::type_name() const noexcept
+std::string Ridge::type_name() const
 {
     return "art::linear_model::Ridge";
 }
@@ -440,11 +452,11 @@ void RidgeClassifier::do_fit(
     fit_encoded(features, encoded);
 }
 
-Eigen::MatrixXd RidgeClassifier::predict_proba(
+Eigen::MatrixXd RidgeClassifier::decision_function(
     const base::FeatureInput& features
 ) const
 {
-    if (!is_fitted()) throw base::NotFittedError("predict_proba()");
+    if (!is_fitted()) throw base::NotFittedError("decision_function()");
     if (features.cols() != static_cast<Eigen::Index>(feature_count_))
         throw std::invalid_argument("Prediction feature dimension does not match model");
     const Eigen::MatrixXd scores = classifier_design(features) * coefficients_;
@@ -501,6 +513,54 @@ double RidgeClassifier::do_score(
     return static_cast<double>(correct) / static_cast<double>(targets.size());
 }
 
+ClassificationMetrics RidgeClassifier::classification_metrics(
+    const Eigen::MatrixXd& features,
+    const Eigen::VectorXd& targets
+) const
+{
+    if (targets.size() == 0 || features.rows() != targets.size())
+        throw std::invalid_argument("Classification features and targets do not match");
+    const auto predictions = do_predict(features);
+    double precision_sum = 0.0, recall_sum = 0.0, f1_sum = 0.0;
+    for (std::size_t cls = 0; cls < class_count_; ++cls)
+    {
+        Eigen::Index tp = 0, fp = 0, fn = 0;
+        for (Eigen::Index row = 0; row < targets.size(); ++row)
+        {
+            double target = targets(row);
+            if (class_count_ == 2 && target == -1.0) target = 0.0;
+            const bool actual = target == static_cast<double>(cls);
+            const bool predicted = predictions(row) == static_cast<double>(cls);
+            if (actual && predicted) ++tp;
+            if (!actual && predicted) ++fp;
+            if (actual && !predicted) ++fn;
+        }
+        const double precision = tp + fp == 0 ? 0.0 :
+            static_cast<double>(tp) / static_cast<double>(tp + fp);
+        const double recall = tp + fn == 0 ? 0.0 :
+            static_cast<double>(tp) / static_cast<double>(tp + fn);
+        precision_sum += precision;
+        recall_sum += recall;
+        f1_sum += precision + recall == 0.0 ? 0.0 :
+            2.0 * precision * recall / (precision + recall);
+    }
+    return {
+        static_cast<double>((predictions.array() == targets.array()).count()) /
+            static_cast<double>(targets.size()),
+        precision_sum / static_cast<double>(class_count_),
+        recall_sum / static_cast<double>(class_count_),
+        f1_sum / static_cast<double>(class_count_)
+    };
+}
+
+ClassificationMetrics RidgeClassifier::evaluate(
+    const Eigen::MatrixXd& features,
+    const Eigen::VectorXd& targets
+) const
+{
+    return classification_metrics(features, targets);
+}
+
 double RidgeClassifier::alpha() const noexcept { return alpha_; }
 std::size_t RidgeClassifier::class_count() const noexcept { return class_count_; }
 std::size_t RidgeClassifier::feature_count() const noexcept { return feature_count_; }
@@ -523,7 +583,7 @@ void RidgeClassifier::save(const std::filesystem::path& path) const
 {
     art::save(*this, path.string());
 }
-const char* RidgeClassifier::type_name() const noexcept
+std::string RidgeClassifier::type_name() const
 {
     return "art::linear_model::RidgeClassifier";
 }

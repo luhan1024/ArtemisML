@@ -18,6 +18,7 @@
 
 #include "art/data/dataset.h"
 #include "art/base/regressor.h"
+#include "art/linear_model/metrics.h"
 #include "art/optim/optimizer.h"
 
 #include <filesystem>
@@ -30,13 +31,6 @@ namespace art
 
 namespace art::linear_model
 {
-    struct RegressionMetrics
-    {
-        double mean_squared_error = 0.0;
-        double mean_absolute_error = 0.0;
-        double r2_score = 0.0;
-    };
-
     using data::Dataset;
     using optim::HessianMatrix;
     using optim::OptimizationProblem;
@@ -90,7 +84,7 @@ namespace art::linear_model
         ) const;
 
         void save(const std::filesystem::path& path) const;
-        const char* type_name() const noexcept;
+        std::string type_name() const;
         std::size_t max_iterations() const noexcept;
         double tolerance() const noexcept;
 

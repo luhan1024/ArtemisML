@@ -19,6 +19,7 @@
 #include "art/base/classifier.h"
 #include "art/base/regressor.h"
 #include "art/data/dataset.h"
+#include "art/linear_model/metrics.h"
 #include "art/optim/optimizer.h"
 
 #include <filesystem>
@@ -64,7 +65,7 @@ namespace art::linear_model
         const optim::ParameterVector& parameters() const;
         std::size_t feature_count() const noexcept;
         void save(const std::filesystem::path& path) const;
-        const char* type_name() const noexcept;
+        std::string type_name() const;
         std::size_t iterations() const noexcept;
         bool converged() const noexcept;
         double mean_squared_error(
@@ -74,6 +75,9 @@ namespace art::linear_model
             const Eigen::MatrixXd&, const Eigen::VectorXd& labels
         ) const;
         double r2_score(
+            const Eigen::MatrixXd&, const Eigen::VectorXd& labels
+        ) const;
+        RegressionMetrics evaluate(
             const Eigen::MatrixXd&, const Eigen::VectorXd& labels
         ) const;
 
@@ -111,8 +115,14 @@ namespace art::linear_model
             const Eigen::MatrixXd& one_hot_targets
         );
 
-        Eigen::MatrixXd predict_proba(
+        Eigen::MatrixXd decision_function(
             const base::FeatureInput& features
+        ) const;
+        ClassificationMetrics classification_metrics(
+            const Eigen::MatrixXd&, const Eigen::VectorXd& targets
+        ) const;
+        ClassificationMetrics evaluate(
+            const Eigen::MatrixXd&, const Eigen::VectorXd& targets
         ) const;
         double alpha() const noexcept;
         std::size_t class_count() const noexcept;
@@ -121,7 +131,7 @@ namespace art::linear_model
         const std::vector<std::string>& class_labels() const noexcept;
         void set_class_labels(const std::vector<std::string>& labels);
         void save(const std::filesystem::path& path) const;
-        const char* type_name() const noexcept;
+        std::string type_name() const;
 
     protected:
         void do_fit(const base::FeatureInput&, const base::TargetInput&) override;

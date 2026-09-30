@@ -17,6 +17,7 @@
 #pragma once
 
 #include "art/base/regressor.h"
+#include "art/linear_model/metrics.h"
 #include "art/linear_model/linear_regression.h"
 #include "art/optim/optimizer.h"
 
@@ -50,7 +51,7 @@ namespace art::linear_model
             const Eigen::VectorXd& targets
         ) const;
         void save(const std::filesystem::path& path) const;
-        const char* type_name() const noexcept;
+        std::string type_name() const;
 
     protected:
         void do_fit(const base::FeatureInput&, const base::TargetInput&) override;

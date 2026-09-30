@@ -227,7 +227,7 @@ void Lasso::save(const std::filesystem::path& path) const
 {
     art::save(*this, path.string());
 }
-const char* Lasso::type_name() const noexcept
+std::string Lasso::type_name() const
 {
     return "art::linear_model::Lasso";
 }
@@ -316,7 +316,7 @@ void ElasticNet::save(const std::filesystem::path& path) const
 {
     art::save(*this, path.string());
 }
-const char* ElasticNet::type_name() const noexcept
+std::string ElasticNet::type_name() const
 {
     return "art::linear_model::ElasticNet";
 }

@@ -17,6 +17,7 @@
 #pragma once
 
 #include "art/base/classifier.h"
+#include "art/linear_model/metrics.h"
 #include "art/optim/optimizer.h"
 
 #include <Eigen/Dense>
@@ -81,7 +82,13 @@ namespace art::linear_model
         const std::vector<std::string>& class_labels() const noexcept;
         void set_class_labels(const std::vector<std::string>& labels);
         double decision_threshold() const noexcept;
-        const char* type_name() const noexcept;
+        std::string type_name() const;
+        ClassificationMetrics classification_metrics(
+            const Eigen::MatrixXd&, const Eigen::VectorXd& targets
+        ) const;
+        ClassificationMetrics evaluate(
+            const Eigen::MatrixXd&, const Eigen::VectorXd& targets
+        ) const;
         const LogisticRegressionOptions& options() const noexcept;
         void save(const std::filesystem::path& path) const;
         // Rows include the intercept; binary models use one logit column,

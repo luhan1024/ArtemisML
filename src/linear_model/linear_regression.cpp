@@ -286,7 +286,7 @@ void LinearRegression::save(const std::filesystem::path& path) const
     art::save(*this, path.string());
 }
 
-const char* LinearRegression::type_name() const noexcept
+std::string LinearRegression::type_name() const
 {
     return "art::linear_model::LinearRegression";
 }

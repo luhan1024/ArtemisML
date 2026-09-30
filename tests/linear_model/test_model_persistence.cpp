@@ -42,8 +42,10 @@ namespace
         assert(loaded.predict_proba(features).isApprox(
             original.predict_proba(features)
         ));
-        assert(loaded.evaluate(features, targets) ==
-               original.score(features, targets));
+        const auto metrics = std::get<art::linear_model::ClassificationMetrics>(
+            loaded.evaluate(features, targets)
+        );
+        assert(metrics.accuracy == original.score(features, targets));
     }
 }
 
@@ -142,9 +144,13 @@ int main()
     assert(loaded_regression.predict(regression_dataset.features).isApprox(
         regression_model.predict(regression_dataset.features)
     ));
-    assert(loaded_regression.evaluate(
-        regression_dataset.features, regression_dataset.labels
-    ) == regression_model.r2_score(
+    const auto loaded_regression_result =
+        std::get<art::linear_model::RegressionMetrics>(
+            loaded_regression.evaluate(
+                regression_dataset.features, regression_dataset.labels
+            )
+        );
+    assert(loaded_regression_result.r2_score == regression_model.r2_score(
         regression_dataset.features, regression_dataset.labels
     ));
     const art::linear_model::RegressionMetrics regression_metrics =
@@ -206,9 +212,15 @@ int main()
     assert(loaded_ridge_classifier.predict(classifier_features).isApprox(
         ridge_classifier.predict(classifier_features)
     ));
-    assert(loaded_ridge_classifier.evaluate(
+    const auto ridge_classifier_metrics =
+        std::get<art::linear_model::ClassificationMetrics>(
+            loaded_ridge_classifier.evaluate(
+                classifier_features, classifier_targets
+            )
+        );
+    assert(ridge_classifier_metrics.accuracy == ridge_classifier.score(
         classifier_features, classifier_targets
-    ) == ridge_classifier.score(classifier_features, classifier_targets));
+    ));
     std::remove("model_ridge_classifier.artemisml");
 
     std::cout << "Model persistence round-trip test passed.\n";

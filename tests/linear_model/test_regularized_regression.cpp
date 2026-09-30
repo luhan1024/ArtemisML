@@ -41,7 +41,9 @@ int main()
     const art::Model loaded_lasso = art::load("model_lasso.artemisml");
     assert(loaded_lasso.type_name() == lasso.type_name());
     assert(loaded_lasso.predict(features).isApprox(lasso.predict(features)));
-    assert(loaded_lasso.evaluate(features, targets) == lasso.score(features, targets));
+    const auto loaded_lasso_metrics =
+        loaded_lasso.regression_metrics(features, targets);
+    assert(loaded_lasso_metrics.r2_score == lasso.score(features, targets));
     loaded_lasso.save("model_lasso_copy.artemisml");
 
     art::linear_model::ElasticNet elastic_net(0.01, 0.25);

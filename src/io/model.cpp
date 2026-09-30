@@ -378,26 +378,34 @@ Eigen::MatrixXd Model::predict_proba(const Eigen::MatrixXd& features) const
     {
         return (*model)->predict_proba(features);
     }
-    if (const auto* model = std::get_if<
-        std::shared_ptr<linear_model::RidgeClassifier>
-    >(&model_); model != nullptr && *model)
-    {
-        return (*model)->predict_proba(features);
-    }
-    else
-    {
-        throw std::logic_error("predict_proba is unavailable for this model type");
-    }
+    throw std::logic_error("predict_proba is unavailable for this model type");
 }
 
-double Model::evaluate(
+Eigen::MatrixXd Model::decision_function(const Eigen::MatrixXd& features) const
+{
+    const auto* model = std::get_if<
+        std::shared_ptr<linear_model::RidgeClassifier>
+    >(&model_);
+    if (model == nullptr || !*model)
+        throw std::logic_error("decision_function is unavailable for this model type");
+    return (*model)->decision_function(features);
+}
+
+linear_model::EvaluationResult Model::evaluate(
     const Eigen::MatrixXd& features,
     const Eigen::VectorXd& targets
 ) const
 {
-    return std::visit([&](const auto& model) {
+    return std::visit([&](const auto& model) -> linear_model::EvaluationResult {
         if (!model) throw std::logic_error("Model handle is empty");
-        return model->score(features, targets);
+        using ModelPointer = std::decay_t<decltype(model)>;
+        if constexpr (std::is_same_v<ModelPointer,
+            std::shared_ptr<linear_model::LogisticRegression>> ||
+            std::is_same_v<ModelPointer,
+            std::shared_ptr<linear_model::RidgeClassifier>>)
+            return model->classification_metrics(features, targets);
+        else
+            return model->evaluate(features, targets);
     }, model_);
 }
 
@@ -436,6 +444,25 @@ linear_model::RegressionMetrics Model::regression_metrics(
                 "regression_metrics is unavailable for this model type"
             );
         }
+    }, model_);
+}
+
+linear_model::ClassificationMetrics Model::classification_metrics(
+    const Eigen::MatrixXd& features,
+    const Eigen::VectorXd& targets
+) const
+{
+    return std::visit([&](const auto& model) -> linear_model::ClassificationMetrics {
+        if (!model) throw std::logic_error("Model handle is empty");
+        using ModelPointer = std::decay_t<decltype(model)>;
+        if constexpr (std::is_same_v<ModelPointer,
+            std::shared_ptr<linear_model::LogisticRegression>>)
+            return model->classification_metrics(features, targets);
+        else if constexpr (std::is_same_v<ModelPointer,
+            std::shared_ptr<linear_model::RidgeClassifier>>)
+            return model->classification_metrics(features, targets);
+        else
+            throw std::logic_error("classification_metrics is unavailable for this model type");
     }, model_);
 }
 

@@ -39,11 +39,16 @@ namespace art
         bool is_fitted() const noexcept;
         Eigen::VectorXd predict(const Eigen::MatrixXd& features) const;
         Eigen::MatrixXd predict_proba(const Eigen::MatrixXd& features) const;
-        double evaluate(
+        Eigen::MatrixXd decision_function(const Eigen::MatrixXd& features) const;
+        linear_model::EvaluationResult evaluate(
             const Eigen::MatrixXd& features,
             const Eigen::VectorXd& targets
         ) const;
         linear_model::RegressionMetrics regression_metrics(
+            const Eigen::MatrixXd& features,
+            const Eigen::VectorXd& targets
+        ) const;
+        linear_model::ClassificationMetrics classification_metrics(
             const Eigen::MatrixXd& features,
             const Eigen::VectorXd& targets
         ) const;

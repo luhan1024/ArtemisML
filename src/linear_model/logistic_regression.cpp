@@ -458,6 +458,54 @@ double LogisticRegression::do_score(
     return static_cast<double>(correct) / static_cast<double>(targets.size());
 }
 
+ClassificationMetrics LogisticRegression::classification_metrics(
+    const Eigen::MatrixXd& features,
+    const Eigen::VectorXd& targets
+) const
+{
+    if (targets.size() == 0 || features.rows() != targets.size())
+        throw std::invalid_argument("Classification features and targets do not match");
+    const auto predictions = do_predict(features);
+    double precision_sum = 0.0;
+    double recall_sum = 0.0;
+    double f1_sum = 0.0;
+    for (std::size_t cls = 0; cls < class_count_; ++cls)
+    {
+        Eigen::Index tp = 0, fp = 0, fn = 0;
+        for (Eigen::Index row = 0; row < targets.size(); ++row)
+        {
+            const bool actual = targets(row) == static_cast<double>(cls);
+            const bool predicted = predictions(row) == static_cast<double>(cls);
+            if (actual && predicted) ++tp;
+            if (!actual && predicted) ++fp;
+            if (actual && !predicted) ++fn;
+        }
+        const double precision = tp + fp == 0 ? 0.0 :
+            static_cast<double>(tp) / static_cast<double>(tp + fp);
+        const double recall = tp + fn == 0 ? 0.0 :
+            static_cast<double>(tp) / static_cast<double>(tp + fn);
+        precision_sum += precision;
+        recall_sum += recall;
+        f1_sum += precision + recall == 0.0 ? 0.0 :
+            2.0 * precision * recall / (precision + recall);
+    }
+    return {
+        static_cast<double>((predictions.array() == targets.array()).count()) /
+            static_cast<double>(targets.size()),
+        precision_sum / static_cast<double>(class_count_),
+        recall_sum / static_cast<double>(class_count_),
+        f1_sum / static_cast<double>(class_count_)
+    };
+}
+
+ClassificationMetrics LogisticRegression::evaluate(
+    const Eigen::MatrixXd& features,
+    const Eigen::VectorXd& targets
+) const
+{
+    return classification_metrics(features, targets);
+}
+
 std::size_t LogisticRegression::class_count() const noexcept
 {
     return class_count_;
@@ -508,7 +556,7 @@ double LogisticRegression::decision_threshold() const noexcept
     return options_.decision_threshold;
 }
 
-const char* LogisticRegression::type_name() const noexcept
+std::string LogisticRegression::type_name() const
 {
     return "art::linear_model::LogisticRegression";
 }
