@@ -146,4 +146,66 @@ namespace art
     void save(const linear_model::ElasticNet& model, const std::string& path);
     void save(const Model& model, const std::string& path);
     Model load(const std::string& path);
+
+    inline void save(
+        const linear_model::LogisticRegression& model,
+        const std::filesystem::path& path
+    ) { save(model, path.string()); }
+
+    inline void save(
+        const linear_model::LinearRegression& model,
+        const std::filesystem::path& path
+    ) { save(model, path.string()); }
+
+    inline void save(
+        const linear_model::Ridge& model,
+        const std::filesystem::path& path
+    ) { save(model, path.string()); }
+
+    inline void save(
+        const linear_model::RidgeClassifier& model,
+        const std::filesystem::path& path
+    ) { save(model, path.string()); }
+
+    inline void save(
+        const linear_model::Lasso& model,
+        const std::filesystem::path& path
+    ) { save(model, path.string()); }
+
+    inline void save(
+        const linear_model::ElasticNet& model,
+        const std::filesystem::path& path
+    ) { save(model, path.string()); }
+
+    inline void save(
+        const Model& model,
+        const std::filesystem::path& path
+    ) { save(model, path.string()); }
+
+    inline void save(const linear_model::LogisticRegression& model, const char* path)
+    { save(model, std::string(path)); }
+
+    inline void save(const linear_model::LinearRegression& model, const char* path)
+    { save(model, std::string(path)); }
+
+    inline void save(const linear_model::Ridge& model, const char* path)
+    { save(model, std::string(path)); }
+
+    inline void save(const linear_model::RidgeClassifier& model, const char* path)
+    { save(model, std::string(path)); }
+
+    inline void save(const linear_model::Lasso& model, const char* path)
+    { save(model, std::string(path)); }
+
+    inline void save(const linear_model::ElasticNet& model, const char* path)
+    { save(model, std::string(path)); }
+
+    inline void save(const Model& model, const char* path)
+    { save(model, std::string(path)); }
+
+    inline Model load(const char* path)
+    { return load(std::string(path)); }
+
+    inline Model load(const std::filesystem::path& path)
+    { return load(path.string()); }
 }
