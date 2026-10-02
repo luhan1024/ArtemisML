@@ -188,56 +188,145 @@ LogisticRegression 支持二分类 BCE 和多分类 Softmax Cross Entropy，训�
 BCE 和 Softmax Cross Entropy 直接接收 logits，并使用稳定的数值公式。第一阶段暂不
 实现 AdaGrad、Adam、FocalLoss 或其他扩展损失。
 
-## 当前测试
+## 构建环境与 CMake 入门
 
-当前已注册并通过的 WSL CTest 包括：
+ArtemisML 使用 CMake 管理构建。`CMakeLists.txt` 要求 CMake 3.20 或更新版本，项目使用
+C++17；Eigen 已随仓库放在 `third_party/eigen`，不需要另外下载。构建、运行和测试统一在
+WSL 的 `zsh` 中完成；Git 提交和 GitHub 同步在 Windows 工作区完成。
 
-- `csv_reader`
-- `optimizer`
-- `linear_regression`
-- `base`
-- `dataset`
-- `pipeline`
-- `autodiff`
-- `logistic_binary`
-- `preprocessing`
-- `label_encoder`
-- `loss`
-- `core_types`
-- `data_api`
-- `model_selection`
+### 1. 准备环境并进入项目
 
-最近一次完整验证结果：
+请准备 WSL、`zsh`、CMake 3.20+ 和支持 C++17 的 C++ 编译器（例如 GCC）。在 Windows
+PowerShell 中启动 WSL 的 zsh：
 
-```text
-100% tests passed out of 14
+```powershell
+wsl.exe -- zsh
 ```
 
-## 构建与测试
+进入仓库在 WSL 中对应的目录。Windows 的 `F:\Project\ArtemisML` 通常映射为：
 
-项目规定在 WSL 中完成配置、编译、运行和测试，在本机 Windows 工作区完成 Git 提交、发布和 GitHub 同步。
+```zsh
+cd /mnt/f/Project/ArtemisML
+```
 
-```bash
+如果仓库放在其他 Windows 盘符，将盘符映射为 `/mnt/<小写盘符>/...`；也可以在 WSL 中
+先运行 `pwd` 确认当前位置，再切换到实际仓库目录。构建前确认当前目录包含
+`CMakeLists.txt`：
+
+```zsh
+pwd
+ls CMakeLists.txt
+cmake --version
+zsh --version
+```
+
+### 2. 首次配置
+
+在仓库根目录运行：
+
+```zsh
+cmake -S . -B build-wsl
+```
+
+`-S .` 指定当前仓库为源码目录，`-B build-wsl` 指定独立的构建目录。CMake 会在该目录
+生成构建系统和缓存；源码文件不会放进构建目录。首次配置后，同一工作区通常不需要每次
+重新配置，修改 `CMakeLists.txt` 或构建选项时再运行配置命令即可。
+
+如需显式选择构建类型，可在首次配置时指定：
+
+```zsh
+cmake -S . -B build-wsl -DCMAKE_BUILD_TYPE=Release
+```
+
+调试项目时可将 `Release` 换成 `Debug`。同一个构建目录应保持同一构建类型；切换类型时
+重新配置，或使用另一个构建目录，例如 `build-wsl-debug`。
+
+### 3. 编译库和测试程序
+
+```zsh
+cmake --build build-wsl
+```
+
+这会构建 `artemisml` 库以及 CMake 中注册的测试可执行程序。只编译单个目标时，可以指定
+目标名称，例如：
+
+```zsh
+cmake --build build-wsl --target test_unified_model_api
+```
+
+查看已注册的目标可使用：
+
+```zsh
+cmake --build build-wsl --target help
+```
+
+### 4. 运行测试
+
+先列出 CTest 测试：
+
+```zsh
+ctest --test-dir build-wsl -N
+```
+
+运行全部测试并显示失败信息：
+
+```zsh
+ctest --test-dir build-wsl --output-on-failure
+```
+
+只运行一个测试时使用 `-R` 匹配测试名：
+
+```zsh
+ctest --test-dir build-wsl -R unified_model_api --output-on-failure
+```
+
+常用测试名包括 `csv_reader`、`optimizer`、`linear_regression`、`logistic_binary`、
+`model_persistence`、`unified_model_api`、`regularized_regression`、`base`、`dataset`、
+`pipeline`、`autodiff`、`preprocessing`、`label_encoder`、`loss`、`core_types`、
+`data_api` 和 `model_selection`。测试数量会随 CMake 注册目标的变更而变化；以
+`ctest -N` 的当前输出为准。
+
+### 5. 修改后重新构建
+
+修改 C++ 源码或头文件后，重新编译并运行相关测试；修改构建配置后先重新配置：
+
+```zsh
 cmake -S . -B build-wsl
 cmake --build build-wsl
 ctest --test-dir build-wsl --output-on-failure
 ```
 
-多任务不得同时写入或使用 `build-wsl`。构建验证由项目维护者统一串行安排。
+只想重新编译时可以跳过配置；只验证某一功能时，可以先构建对应测试目标，再用 CTest
+的 `-R` 运行该测试。合并或发布前应运行完整测试集。
 
-## 当前未完成部分
+### 6. 清理构建结果
 
-以下模块已经预留目录，但尚未形成完整实现：
+优先使用 CMake 的 clean 目标清理编译产物：
 
-- `core` 基础类型和统一错误体系。
-- pandas-like `Series`、`Index`、dtype 和完整缺失值语义。
-- `preprocessing`。
-- `metrics`。
-- `model_selection`。
-- 更完整的 DataFrame 选择、连接、分组和聚合操作。
-- 更丰富的损失函数和矩阵级自动求导支持。
+```zsh
+cmake --build build-wsl --target clean
+```
 
-这些模块应在现有层级基础上逐步实现，不应通过空实现或未经讨论的 API 重命名掩盖未完成状态。
+如果构建缓存损坏或需要完全重新配置，可在确认目标仅为生成的 `build-wsl` 后删除该构建
+目录，再从首次配置步骤开始。不要把源码、数据集或其他工作目录当作构建产物删除。
+
+### 常见问题
+
+- **`The source directory does not appear to contain CMakeLists.txt`**：当前目录不在仓库根目录；先 `cd` 到包含 `CMakeLists.txt` 的目录。
+- **CMake 版本过旧**：项目最低要求为 3.20；确认 WSL 中调用的 `cmake --version`，不要用 Windows 的 CMake 版本代替 WSL 环境。
+- **找不到 C++ 编译器或生成失败**：确认 WSL 已安装并可调用 GCC/G++，然后重新运行 CMake 配置。
+- **测试找不到 CSV 文件**：通过 CTest 运行已注册测试；CMake 为项目测试设置了仓库根目录作为工作目录。手动运行测试程序时也应从仓库根目录启动。
+- **修改 CMake 后仍使用旧目标**：重新运行 `cmake -S . -B build-wsl`，再编译并检查 `ctest -N`。
+- **多个任务同时编译出现文件冲突**：同一时间只运行一个 WSL 配置、编译、测试或项目程序流程；不要让多个任务并发写入或使用 `build-wsl`。
+
+每次构建记录应注明开始/结束、执行命令、结果和失败原因。多任务的 WSL 构建验证由项目维护者统一串行安排。
+
+## 当前实现范围
+
+项目当前已包含 CSV 读写和数据集桥接、文本标签编码、数值预处理、Pipeline/FeatureUnion、
+线性回归与分类模型、模型保存加载、损失函数、标量反向自动求导、优化器和模型选择等
+实现。pandas 风格的完整动态 dtype、DataFrame 连接/分组/聚合、矩阵级自动求导以及更多
+优化器和算法仍在扩展中；每项能力的准确实现状态以对应层级 README 和公共头文件为准。
 
 ## 贡献与开发约定
 
