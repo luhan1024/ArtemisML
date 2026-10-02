@@ -11,7 +11,7 @@
 - LabelEncoder 从 `iris.csv` 读取三类文本标签，验证 Auto OneHot、SignedOrdinal、
   类别顺序、输出列名和未知标签策略；另验证二分类 `Binary01` 与 `BinarySigned`。
 
-测试只覆盖数值矩阵边界，不伪造字符串 DataFrame API。建议由程序员0统一串行执行唯一
+测试只覆盖数值矩阵边界，不伪造字符串 DataFrame API。建议由项目维护者统一串行执行唯一
 验证命令：
 
 ```bash

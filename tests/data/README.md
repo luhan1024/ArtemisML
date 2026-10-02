@@ -9,4 +9,4 @@
 `test_dataset.cpp` 覆盖 Dataset 的合法转换、行宽错误、重复列/特征、零样本、零特征、
 缺失标签和非有限数值。`test_data_api.cpp` 覆盖 Index 标签与默认索引、Series 访问/dtype/
 数值转换、缺失值策略、DataFrame 形状、按列/行选择和越界错误。测试不依赖文件系统或
-Windows 行为；WSL 构建测试由程序员0串行调度。
+Windows 行为；WSL 构建测试由项目维护者串行安排。

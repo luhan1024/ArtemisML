@@ -223,7 +223,7 @@ cmake --build build-wsl
 ctest --test-dir build-wsl --output-on-failure
 ```
 
-多任务不得同时写入或使用 `build-wsl`。构建验证由程序员0统一串行调度。
+多任务不得同时写入或使用 `build-wsl`。构建验证由项目维护者统一串行安排。
 
 ## 当前未完成部分
 

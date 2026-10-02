@@ -11,7 +11,7 @@ LabelEncoder 的 Binary01、BinarySigned、SignedOrdinal、Ordinal 和 OneHot �
 ## 统一 API 覆盖矩阵
 
 `test_unified_model_api.cpp` 定义统一线性模型 API 的验收样例。该文件只负责测试
-公共行为，不改变生产接口；若 CMake 尚未注册该测试，应由程序员0在统一构建调度中
+公共行为，不改变生产接口；若 CMake 尚未注册该测试，应由项目维护者在统一构建安排中
 接入对应测试目标。
 
 | 模型 | `fit(X,y)` | 显式 Optimizer | 二分类 0/1 | 二分类 -1/1 | 多分类 one-hot | 文本标签边界 | evaluate/predict | save/load |
@@ -36,4 +36,4 @@ LabelEncoder 的 Binary01、BinarySigned、SignedOrdinal、Ordinal 和 OneHot �
 
 - RidgeClassifier 的显式 Optimizer 入口已补齐；WSL 验证需覆盖向量和 one-hot 两种目标入口。
 - LogisticRegression 的多分类输入当前头文件只暴露 `VectorXd`，没有直接 `MatrixXd one-hot` 重载；测试不伪造不存在的接口，而以类别向量和文本标签编码路径覆盖。
-- 测试文件尚未修改 CMake 注册；由程序员0在唯一串行 WSL 验证中决定注册目标和执行顺序。
+- 测试文件尚未修改 CMake 注册；由项目维护者在唯一串行 WSL 验证中决定注册目标和执行顺序。
