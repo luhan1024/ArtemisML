@@ -242,6 +242,7 @@ ctest --test-dir build-wsl --output-on-failure
 ## 贡献与开发约定
 
 - 先阅读 [AGENTS.md](AGENTS.md) 再修改代码。
+- 如借助 AI 辅助开发，请遵循 [AGENTS.md](AGENTS.md) 及各层级 README.md 中的具体规则。
 - 保留已有用户修改，不擅自回退或删除文件。
 - 编译和测试统一在 WSL 完成。
 - 发布和 GitHub 同步基于本机 Git 工作区完成。
