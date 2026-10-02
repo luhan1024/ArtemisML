@@ -61,6 +61,12 @@ namespace art::linear_model
             const optim::OptimizerOptions& options
         );
 
+        void fit(
+            const base::FeatureInput& features,
+            const base::TargetInput& targets,
+            const optim::Optimizer& optimizer
+        );
+
         double alpha() const noexcept;
         const optim::ParameterVector& parameters() const;
         std::size_t feature_count() const noexcept;
@@ -100,6 +106,7 @@ namespace art::linear_model
         double alpha_;
         optim::ParameterVector parameters_;
         std::size_t feature_count_ = 0;
+        const optim::Optimizer* active_optimizer_ = nullptr;
         optim::OptimizationResult last_result_;
     };
 
@@ -113,6 +120,18 @@ namespace art::linear_model
         void fit(
             const base::FeatureInput& features,
             const Eigen::MatrixXd& one_hot_targets
+        );
+
+        void fit(
+            const base::FeatureInput& features,
+            const Eigen::MatrixXd& one_hot_targets,
+            const optim::Optimizer& optimizer
+        );
+
+        void fit(
+            const base::FeatureInput& features,
+            const base::TargetInput& targets,
+            const optim::Optimizer& optimizer
         );
 
         Eigen::MatrixXd decision_function(
@@ -143,7 +162,8 @@ namespace art::linear_model
 
         void fit_encoded(
             const base::FeatureInput& features,
-            const Eigen::MatrixXd& targets
+            const Eigen::MatrixXd& targets,
+            const optim::Optimizer* optimizer = nullptr
         );
         void restore_state(
             const Eigen::MatrixXd& coefficients,
@@ -158,5 +178,6 @@ namespace art::linear_model
         std::size_t feature_count_ = 0;
         std::size_t class_count_ = 0;
         std::vector<std::string> class_labels_;
+        const optim::Optimizer* active_optimizer_ = nullptr;
     };
 }

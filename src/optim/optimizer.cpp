@@ -25,15 +25,21 @@ namespace
 {
     void validateOptions(const OptimizerOptions& options)
     {
-        if (!std::isfinite(options.learning_rate) || options.learning_rate <= 0.0)
-        {
-            throw std::invalid_argument("Learning rate must be positive and finite");
-        }
-
         if (!std::isfinite(options.tolerance) || options.tolerance < 0.0)
         {
             throw std::invalid_argument("Tolerance must be non-negative and finite");
         }
+    }
+
+    double validateLegacyLearningRate(const OptimizerOptions& options)
+    {
+        if (!std::isfinite(options.learning_rate) || options.learning_rate <= 0.0)
+        {
+            throw std::invalid_argument(
+                "Legacy GradientDescent learning rate must be positive and finite"
+            );
+        }
+        return options.learning_rate;
     }
 
     void validateValue(double value)
@@ -105,7 +111,7 @@ OptimizationStepResult GradientDescent::step(
 {
     validateOptions(options);
     const double learning_rate = use_legacy_option_learning_rate_
-        ? options.learning_rate : learning_rate_;
+        ? validateLegacyLearningRate(options) : learning_rate_;
     if (!std::isfinite(learning_rate) || learning_rate <= 0.0)
     {
         throw std::invalid_argument("Gradient descent learning rate must be positive and finite");

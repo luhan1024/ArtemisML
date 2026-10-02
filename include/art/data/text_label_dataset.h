@@ -16,6 +16,7 @@
  */
 #pragma once
 
+#include "art/core/backend.h"
 #include "art/core/errors.h"
 #include "art/data/dataframe.h"
 
@@ -133,6 +134,29 @@ struct TextLabelDataset
 
     std::size_t sample_count() const noexcept { return labels.size(); }
     std::size_t feature_count() const noexcept { return feature_names.size(); }
+
+    // Explicit bridge to the current base::FeatureInput protocol. This only
+    // parses numeric feature fields; it never encodes the text labels.
+    art::core::backend::Matrix numeric_features() const
+    {
+        art::core::backend::Matrix result(
+            static_cast<Eigen::Index>(sample_count()),
+            static_cast<Eigen::Index>(feature_count())
+        );
+        for (std::size_t column = 0; column < feature_count(); ++column)
+        {
+            const std::vector<double> values = features.column(column).to_numeric();
+            for (std::size_t row = 0; row < values.size(); ++row)
+            {
+                result(
+                    static_cast<Eigen::Index>(row),
+                    static_cast<Eigen::Index>(column)
+                ) = values[row];
+            }
+        }
+        return result;
+    }
+
     LabelVocabulary label_vocabulary() const { return LabelVocabulary::from_series(labels); }
 };
 }

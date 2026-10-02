@@ -37,5 +37,13 @@ Dataset 仍是 data 层中从 DataFrame 到 Eigen 特征矩阵/标签向量的�
 对于 Iris 等文本标签数据，`TextLabelDataset::from_dataframe` 保留特征字段和标签原文；
 `LabelVocabulary` 只按首次出现顺序建立去重词典和查找，不执行 one-hot、二分类或其他
 编码。数值 `Dataset::from_dataframe/from_csv` 的 double 标签行为保持不变，因此文本标签
-调用方应使用 IO 的 `CsvReader::read_text_label_dataset`，再由 preprocessing 决定编码策略。
+调用方应使用 IO 的 `CsvReader::read_text_label_dataset`；`numeric_features()` 可将明确的
+数值特征转换为当前 Eigen 矩阵协议，再由 preprocessing 的 `LabelEncoder` 决定标签编码策略。
+
+## 新增 data API 规范
+
+新增 Series、DataFrame 或 Dataset 能力必须先定义 dtype、缺失值、索引、复制/视图和
+错误语义；不得在 data 层读取 CSV、训练模型或执行标签编码。新增表格操作应说明输入
+列名/位置、输出形状、是否修改原对象，并在 `tests/data` 覆盖空表、重复列、行宽错误、
+缺失值和类型转换边界。
 

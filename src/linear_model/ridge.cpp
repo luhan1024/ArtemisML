@@ -149,6 +149,25 @@ optim::OptimizationResult Ridge::fit(const data::Dataset& dataset, const optim::
     return last_result_;
 }
 
+void Ridge::fit(
+    const base::FeatureInput& features,
+    const base::TargetInput& targets,
+    const optim::Optimizer& optimizer
+)
+{
+    active_optimizer_ = &optimizer;
+    try
+    {
+        base::Predictor::fit(features, targets);
+    }
+    catch (...)
+    {
+        active_optimizer_ = nullptr;
+        throw;
+    }
+    active_optimizer_ = nullptr;
+}
+
 double Ridge::alpha() const noexcept { return alpha_; }
 const optim::ParameterVector& Ridge::parameters() const
 {
@@ -245,7 +264,10 @@ void Ridge::do_fit(const base::FeatureInput& features, const base::TargetInput& 
     data::Dataset dataset;
     dataset.features = features;
     dataset.labels = targets;
-    optim::NewtonOptimizer optimizer;
+    optim::NewtonOptimizer default_optimizer;
+    const optim::Optimizer& optimizer = active_optimizer_ == nullptr
+        ? static_cast<const optim::Optimizer&>(default_optimizer)
+        : *active_optimizer_;
     optim::OptimizerOptions options;
     options.max_iterations = 100;
     options.tolerance = 1e-10;
@@ -318,8 +340,29 @@ namespace
             (void)weights;
             const double scale = 2.0 /
                 static_cast<double>(targets_.size());
-            Eigen::MatrixXd result = scale * design_.transpose() * design_;
-            result.topLeftCorner(result.rows() - 1, result.cols() - 1).diagonal().array() += alpha_;
+            Eigen::MatrixXd class_hessian =
+                scale * design_.transpose() * design_;
+            class_hessian.topLeftCorner(
+                class_hessian.rows() - 1,
+                class_hessian.cols() - 1
+            ).diagonal().array() += alpha_;
+
+            const Eigen::Index class_count = targets_.cols();
+            Eigen::MatrixXd result = Eigen::MatrixXd::Zero(
+                class_hessian.rows() * class_count,
+                class_hessian.cols() * class_count
+            );
+            for (Eigen::Index class_index = 0;
+                 class_index < class_count;
+                 ++class_index)
+            {
+                result.block(
+                    class_index * class_hessian.rows(),
+                    class_index * class_hessian.cols(),
+                    class_hessian.rows(),
+                    class_hessian.cols()
+                ) = class_hessian;
+            }
             return result;
         }
 
@@ -405,9 +448,63 @@ void RidgeClassifier::fit(
     }
 }
 
+void RidgeClassifier::fit(
+    const base::FeatureInput& features,
+    const Eigen::MatrixXd& one_hot_targets,
+    const optim::Optimizer& optimizer
+)
+{
+    active_optimizer_ = &optimizer;
+    try
+    {
+        if (features.rows() == 0 || features.cols() == 0 ||
+            !features.allFinite() || one_hot_targets.rows() != features.rows() ||
+            one_hot_targets.cols() < 2 || !one_hot_targets.allFinite())
+        {
+            throw std::invalid_argument(
+                "RidgeClassifier feature or one-hot target matrix is invalid"
+            );
+        }
+        if (one_hot_targets.cols() == 2)
+        {
+            fit_encoded(features, one_hot_targets.col(1), active_optimizer_);
+        }
+        else
+        {
+            fit_encoded(features, one_hot_targets, active_optimizer_);
+        }
+    }
+    catch (...)
+    {
+        active_optimizer_ = nullptr;
+        throw;
+    }
+    active_optimizer_ = nullptr;
+}
+
+void RidgeClassifier::fit(
+    const base::FeatureInput& features,
+    const base::TargetInput& targets,
+    const optim::Optimizer& optimizer
+)
+{
+    active_optimizer_ = &optimizer;
+    try
+    {
+        base::Predictor::fit(features, targets);
+    }
+    catch (...)
+    {
+        active_optimizer_ = nullptr;
+        throw;
+    }
+    active_optimizer_ = nullptr;
+}
+
 void RidgeClassifier::fit_encoded(
     const base::FeatureInput& features,
-    const Eigen::MatrixXd& targets
+    const Eigen::MatrixXd& targets,
+    const optim::Optimizer* optimizer
 )
 {
     mark_unfitted();
@@ -417,7 +514,10 @@ void RidgeClassifier::fit_encoded(
         throw std::invalid_argument("RidgeClassifier feature or target matrix is invalid");
     const Eigen::MatrixXd design = classifier_design(features);
     RidgeClassifierProblem problem(design, targets, alpha_);
-    optim::NewtonOptimizer optimizer;
+    optim::NewtonOptimizer default_optimizer;
+    const optim::Optimizer& selected_optimizer = optimizer == nullptr
+        ? static_cast<const optim::Optimizer&>(default_optimizer)
+        : *optimizer;
     optim::OptimizerOptions options;
     options.max_iterations = 20;
     options.tolerance = 1e-10;
@@ -426,7 +526,7 @@ void RidgeClassifier::fit_encoded(
     optim::OptimizerState state;
     for (std::size_t iteration = 0; iteration < options.max_iterations; ++iteration)
     {
-        const auto step = optimizer.step(problem, parameters, state, options);
+        const auto step = selected_optimizer.step(problem, parameters, state, options);
         parameters = step.parameters;
         if (step.step_norm <= options.tolerance) break;
     }
@@ -449,7 +549,7 @@ void RidgeClassifier::do_fit(
     std::size_t class_count = 0;
     const Eigen::MatrixXd encoded = normalize_classifier_targets(targets, class_count);
     (void)class_count;
-    fit_encoded(features, encoded);
+    fit_encoded(features, encoded, active_optimizer_);
 }
 
 Eigen::MatrixXd RidgeClassifier::decision_function(

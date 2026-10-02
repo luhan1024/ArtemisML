@@ -65,6 +65,12 @@ namespace art::linear_model
             const OptimizerOptions& options
         );
 
+        void fit(
+            const base::FeatureInput& features,
+            const base::TargetInput& targets,
+            const optim::Optimizer& optimizer
+        );
+
         Eigen::VectorXd predict(const Eigen::MatrixXd& features) const;
         double mean_squared_error(
             const Eigen::MatrixXd& features,
@@ -110,6 +116,7 @@ namespace art::linear_model
         std::size_t feature_count_ = 0;
         std::size_t max_iterations_ = 0;
         double tolerance_ = 0.0;
+        const optim::Optimizer* active_optimizer_ = nullptr;
         bool fitted_ = false;
     };
 }

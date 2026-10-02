@@ -48,10 +48,15 @@ namespace
                 "LogisticRegression targets must be non-empty and finite"
             );
         }
+        bool signed_binary = true;
+        bool binary = true;
         double maximum = -1.0;
         for (Eigen::Index index = 0; index < targets.size(); ++index)
         {
             const double value = targets(index);
+            if (value != -1.0 && value != 1.0) signed_binary = false;
+            if (value != 0.0 && value != 1.0) binary = false;
+            if (signed_binary || binary) continue;
             const double rounded = std::round(value);
             if (value < 0.0 || std::abs(value - rounded) > 1e-12)
             {
@@ -61,6 +66,10 @@ namespace
             }
             maximum = std::max(maximum, rounded);
         }
+        if (signed_binary || binary)
+        {
+            return 2;
+        }
         const double count = maximum + 1.0;
         if (count < 2.0 || count > static_cast<double>(std::numeric_limits<Eigen::Index>::max()))
         {
@@ -69,6 +78,24 @@ namespace
             );
         }
         return static_cast<Eigen::Index>(count);
+    }
+
+    Eigen::VectorXd normalize_binary_targets(const base::TargetInput& targets)
+    {
+        bool signed_binary = true;
+        for (Eigen::Index index = 0; index < targets.size(); ++index)
+        {
+            if (targets(index) != -1.0 && targets(index) != 1.0)
+            {
+                signed_binary = false;
+                break;
+            }
+        }
+        if (!signed_binary)
+        {
+            return targets;
+        }
+        return (targets.array() + 1.0).matrix() / 2.0;
     }
 
     Eigen::MatrixXd add_intercept(const base::FeatureInput& features)
@@ -333,6 +360,9 @@ void LogisticRegression::do_fit(
     }
     const Eigen::Index classes = class_count_from_targets(targets);
     const Eigen::MatrixXd design = add_intercept(features);
+    const Eigen::VectorXd normalized_targets = classes == 2
+        ? normalize_binary_targets(targets)
+        : targets;
     const optim::Optimizer& optimizer = active_optimizer_ == nullptr
         ? static_cast<const optim::Optimizer&>(default_optimizer_)
         : *active_optimizer_;
@@ -341,7 +371,7 @@ void LogisticRegression::do_fit(
     std::vector<double> loss_history;
     if (classes == 2)
     {
-        BinaryProblem problem(design, targets, options_.l2_penalty);
+        BinaryProblem problem(design, normalized_targets, options_.l2_penalty);
         parameters = optimize(
             problem, design.cols(), optimizer, options_, training_history,
             loss_history
@@ -441,19 +471,22 @@ double LogisticRegression::do_score(
         );
     }
     const base::PredictionOutput predictions = do_predict(features);
+    const Eigen::VectorXd normalized_targets = class_count_ == 2
+        ? normalize_binary_targets(targets)
+        : targets;
     Eigen::Index correct = 0;
-    for (Eigen::Index row = 0; row < targets.size(); ++row)
+    for (Eigen::Index row = 0; row < normalized_targets.size(); ++row)
     {
-        const double rounded = std::round(targets(row));
-        if (!std::isfinite(targets(row)) || targets(row) < 0.0 ||
-            std::abs(targets(row) - rounded) > 1e-12 ||
+        const double rounded = std::round(normalized_targets(row));
+        if (!std::isfinite(normalized_targets(row)) || normalized_targets(row) < 0.0 ||
+            std::abs(normalized_targets(row) - rounded) > 1e-12 ||
             rounded >= static_cast<double>(class_count_))
         {
             throw std::invalid_argument(
                 "LogisticRegression score targets must be valid class indices"
             );
         }
-        if (predictions(row) == targets(row)) ++correct;
+        if (predictions(row) == normalized_targets(row)) ++correct;
     }
     return static_cast<double>(correct) / static_cast<double>(targets.size());
 }
@@ -466,15 +499,18 @@ ClassificationMetrics LogisticRegression::classification_metrics(
     if (targets.size() == 0 || features.rows() != targets.size())
         throw std::invalid_argument("Classification features and targets do not match");
     const auto predictions = do_predict(features);
+    const Eigen::VectorXd normalized_targets = class_count_ == 2
+        ? normalize_binary_targets(targets)
+        : targets;
     double precision_sum = 0.0;
     double recall_sum = 0.0;
     double f1_sum = 0.0;
     for (std::size_t cls = 0; cls < class_count_; ++cls)
     {
         Eigen::Index tp = 0, fp = 0, fn = 0;
-        for (Eigen::Index row = 0; row < targets.size(); ++row)
+        for (Eigen::Index row = 0; row < normalized_targets.size(); ++row)
         {
-            const bool actual = targets(row) == static_cast<double>(cls);
+            const bool actual = normalized_targets(row) == static_cast<double>(cls);
             const bool predicted = predictions(row) == static_cast<double>(cls);
             if (actual && predicted) ++tp;
             if (!actual && predicted) ++fp;
@@ -490,8 +526,8 @@ ClassificationMetrics LogisticRegression::classification_metrics(
             2.0 * precision * recall / (precision + recall);
     }
     return {
-        static_cast<double>((predictions.array() == targets.array()).count()) /
-            static_cast<double>(targets.size()),
+        static_cast<double>((predictions.array() == normalized_targets.array()).count()) /
+            static_cast<double>(normalized_targets.size()),
         precision_sum / static_cast<double>(class_count_),
         recall_sum / static_cast<double>(class_count_),
         f1_sum / static_cast<double>(class_count_)

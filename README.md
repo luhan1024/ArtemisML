@@ -87,6 +87,10 @@ ArtemisML/
 - [测试总览](tests/README.md)
 - 各功能层的 API、公式、算法和完成度说明位于对应目录的 README。
 
+新增 loss、model、optimizer、preprocessing、IO、pipeline、metrics 和 model_selection 的
+标准 API 构建方法见 [art 公共 API 扩展规范](include/art/README.md)。该规范要求同步更新
+公共头文件、实现、测试和三层 README，并明确兼容策略、输入输出形状、错误语义及验证命令。
+
 自动求导是当前接口标准的核心基础设施。当前已实现
 `art::core::autodiff::Variable`、`GradientTape`、标量反向模式梯度以及
 `exp/log` 运算；Jacobian、Hessian 和 Hessian-vector product 将在兼容现有协议的基础上继续扩展。

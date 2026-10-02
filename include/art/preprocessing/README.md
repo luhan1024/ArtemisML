@@ -57,3 +57,10 @@
 字符串特征值、缺失值 dtype 体系和 remainder/passthrough 语义仍待稳定的 `data` API
 后再扩展。
 
+## 新增 Transformer 规范
+
+新增预处理器应继承 `base::Transformer`，提供 `fit(X)`、`transform(X)` 和必要时的
+`fit_transform(X)`。`fit` 只能学习训练数据状态，`transform` 不得重新估计统计量或
+类别集合；输入宽度、输出宽度、未知类别、缺失值和非有限值策略必须写入 README。
+新增组件还必须覆盖训练/转换分离、重复 fit、未 fit 调用、维度错误和数据泄漏测试。
+

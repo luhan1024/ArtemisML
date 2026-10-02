@@ -25,6 +25,7 @@
 #include <cstdio>
 #include <filesystem>
 #include <iostream>
+#include <stdexcept>
 #include <variant>
 
 namespace
@@ -64,6 +65,13 @@ int main()
     assert_same_predictions(
         binary_model, loaded_binary, binary_features, binary_targets
     );
+    const char* binary_literal_path = "model_binary_literal.artemisml";
+    art::save(binary_model, binary_literal_path);
+    const art::Model loaded_binary_literal = art::load(binary_literal_path);
+    assert_same_predictions(
+        binary_model, loaded_binary_literal,
+        binary_features, binary_targets
+    );
     const std::filesystem::path binary_copy_path = "model_binary_copy.artemisml";
     loaded_binary.save(binary_copy_path);
     const art::Model loaded_binary_copy = art::load(binary_copy_path.string());
@@ -71,7 +79,30 @@ int main()
         binary_model, loaded_binary_copy, binary_features, binary_targets
     );
     std::remove("model_binary.artemisml");
+    std::remove("model_binary_literal.artemisml");
     std::remove("model_binary_copy.artemisml");
+
+    bool null_save_path_rejected = false;
+    try
+    {
+        art::save(binary_model, static_cast<const char*>(nullptr));
+    }
+    catch (const std::invalid_argument&)
+    {
+        null_save_path_rejected = true;
+    }
+    assert(null_save_path_rejected);
+
+    bool null_load_path_rejected = false;
+    try
+    {
+        static_cast<void>(art::load(static_cast<const char*>(nullptr)));
+    }
+    catch (const std::invalid_argument&)
+    {
+        null_load_path_rejected = true;
+    }
+    assert(null_load_path_rejected);
 
     const Eigen::MatrixXd multiclass_features =
         (Eigen::MatrixXd(9, 2) <<
@@ -222,6 +253,21 @@ int main()
         classifier_features, classifier_targets
     ));
     std::remove("model_ridge_classifier.artemisml");
+
+    art::linear_model::RidgeClassifier invalid_label_model;
+    invalid_label_model.fit(classifier_features, classifier_targets);
+    invalid_label_model.set_class_labels({"", "positive"});
+    bool invalid_serialized_labels_rejected = false;
+    try
+    {
+        art::save(invalid_label_model, "model_invalid_labels.artemisml");
+    }
+    catch (const std::runtime_error&)
+    {
+        invalid_serialized_labels_rejected = true;
+    }
+    assert(invalid_serialized_labels_rejected);
+    std::remove("model_invalid_labels.artemisml");
 
     std::cout << "Model persistence round-trip test passed.\n";
     return 0;

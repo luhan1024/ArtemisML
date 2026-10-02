@@ -16,6 +16,7 @@
  */
 #include "art/io/model.h"
 
+#include <algorithm>
 #include <fstream>
 #include <cmath>
 #include <iomanip>
@@ -64,6 +65,25 @@ namespace
         return value;
     }
 
+    void validate_class_labels(
+        const std::vector<std::string>& labels,
+        const char* model_name
+    )
+    {
+        for (std::size_t index = 0; index < labels.size(); ++index)
+        {
+            if (labels[index].empty() ||
+                std::find(labels.begin(), labels.begin() + index, labels[index]) !=
+                    labels.begin() + index)
+            {
+                throw std::runtime_error(
+                    std::string("Invalid ") + model_name +
+                    " class labels in serialized model"
+                );
+            }
+        }
+    }
+
     void write_model(
         const linear_model::LogisticRegression& model,
         const std::string& path
@@ -73,6 +93,7 @@ namespace
         {
             throw std::logic_error("Cannot save an unfitted model");
         }
+        validate_class_labels(model.class_labels(), "LogisticRegression");
 
         std::ofstream output(path, std::ios::out | std::ios::trunc);
         if (!output.is_open())
@@ -175,6 +196,7 @@ namespace
     )
     {
         if (!model.is_fitted()) throw std::logic_error("Cannot save an unfitted model");
+        validate_class_labels(model.class_labels(), "RidgeClassifier");
         std::ofstream output(path, std::ios::out | std::ios::trunc);
         if (!output.is_open()) throw std::runtime_error("Failed to open model file for writing: " + path);
         output << signature << '\n';
@@ -628,6 +650,7 @@ Model load(const std::string& path)
                 throw std::runtime_error("Invalid RidgeClassifier model label");
             labels.push_back(std::move(label));
         }
+        validate_class_labels(labels, "RidgeClassifier");
         const std::size_t rows = read_field<std::size_t>(input, "coefficient_rows");
         const std::size_t columns = read_field<std::size_t>(input, "coefficient_cols");
         if (rows != feature_count + 1 ||
@@ -721,6 +744,7 @@ Model load(const std::string& path)
         }
         labels.push_back(std::move(label));
     }
+    validate_class_labels(labels, "LogisticRegression");
     const std::size_t rows = read_field<std::size_t>(input, "coefficient_rows");
     const std::size_t columns = read_field<std::size_t>(input, "coefficient_cols");
     if (rows != feature_count + 1 ||

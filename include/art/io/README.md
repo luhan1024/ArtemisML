@@ -31,3 +31,12 @@ auto loaded = art::load("model.artemisml");
 loaded.save(std::filesystem::path{"model-copy.artemisml"});
 ```
 
+## 新增 IO 或持久化格式规范
+
+新增数据格式必须提供 reader/writer 的明确入口，负责格式解析和 `data` 对象转换，
+不得在 IO 层调用具体模型。新增模型持久化必须使用稳定类型名、格式签名和版本号，
+保存所有预测所需状态，并在加载时验证维度、有限值、类别数量和版本。
+
+持久化扩展必须增加合法文件 round-trip、损坏签名、未知版本、维度错误和不完整字段
+测试。加载结果必须能继续 `predict/evaluate/save`，不能只验证文件可读。
+

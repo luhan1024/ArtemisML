@@ -199,6 +199,25 @@ OptimizationResult LinearRegression::fit(
     return result;
 }
 
+void LinearRegression::fit(
+    const base::FeatureInput& features,
+    const base::TargetInput& targets,
+    const optim::Optimizer& optimizer
+)
+{
+    active_optimizer_ = &optimizer;
+    try
+    {
+        base::Predictor::fit(features, targets);
+    }
+    catch (...)
+    {
+        active_optimizer_ = nullptr;
+        throw;
+    }
+    active_optimizer_ = nullptr;
+}
+
 Eigen::VectorXd LinearRegression::predict(
     const Eigen::MatrixXd& features
 ) const
@@ -309,7 +328,10 @@ void LinearRegression::do_fit(
     Dataset dataset;
     dataset.features = features;
     dataset.labels = targets;
-    optim::GradientDescent optimizer;
+    optim::GradientDescent default_optimizer;
+    const optim::Optimizer& optimizer = active_optimizer_ == nullptr
+        ? static_cast<const optim::Optimizer&>(default_optimizer)
+        : *active_optimizer_;
     OptimizerOptions options;
 
     // For the quadratic least-squares objective, ||A||_F^2 / n is an

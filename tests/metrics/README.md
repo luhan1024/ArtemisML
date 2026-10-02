@@ -1,7 +1,7 @@
 # tests/metrics
 
-该目录验证 metrics 层公共接口的行为、边界条件和错误语义。
+`art::metrics` 当前没有生产 API，因此本目录暂不建立可执行测试目标。
 
-测试应优先从用户可见 API 出发，覆盖正常路径、空输入、维度错误、状态错误和数值稳定性。若该层仍处于预留阶段，应记录当前未实现状态，不能用空测试掩盖缺口。
+待实现接口后，测试应覆盖 MSE、MAE、R2 和 accuracy 的正常值、空输入、样本数/维度错误、非有限值、回归标签与分类标签语义，并验证 lower-is-better 或 higher-is-better 方向。
 
-对应设计说明：`include/art/metrics/README.md`。
+当前线性模型的 `RegressionMetrics`/`ClassificationMetrics` 测试属于 `tests/linear_model`，不应被误记为独立 `art::metrics` 已实现。

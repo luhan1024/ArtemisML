@@ -89,6 +89,10 @@ add_executable(test_model_persistence tests/linear_model/test_model_persistence.
 target_link_libraries(test_model_persistence PRIVATE artemisml)
 add_test(NAME model_persistence COMMAND test_model_persistence WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
+add_executable(test_unified_model_api tests/linear_model/test_unified_model_api.cpp)
+target_link_libraries(test_unified_model_api PRIVATE artemisml)
+add_test(NAME unified_model_api COMMAND test_unified_model_api WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
 add_executable(test_regularized_regression tests/linear_model/test_regularized_regression.cpp)
 target_link_libraries(test_regularized_regression PRIVATE artemisml)
 add_test(NAME regularized_regression COMMAND test_regularized_regression WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})

@@ -26,12 +26,25 @@
 
 #include <filesystem>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <variant>
 #include <vector>
 
 namespace art
 {
+    namespace detail
+    {
+        inline std::string model_path_from_c_string(const char* path)
+        {
+            if (path == nullptr)
+            {
+                throw std::invalid_argument("Model path must not be null");
+            }
+            return std::string(path);
+        }
+    }
+
     class Model
     {
     public:
@@ -183,28 +196,28 @@ namespace art
     ) { save(model, path.string()); }
 
     inline void save(const linear_model::LogisticRegression& model, const char* path)
-    { save(model, std::string(path)); }
+    { save(model, detail::model_path_from_c_string(path)); }
 
     inline void save(const linear_model::LinearRegression& model, const char* path)
-    { save(model, std::string(path)); }
+    { save(model, detail::model_path_from_c_string(path)); }
 
     inline void save(const linear_model::Ridge& model, const char* path)
-    { save(model, std::string(path)); }
+    { save(model, detail::model_path_from_c_string(path)); }
 
     inline void save(const linear_model::RidgeClassifier& model, const char* path)
-    { save(model, std::string(path)); }
+    { save(model, detail::model_path_from_c_string(path)); }
 
     inline void save(const linear_model::Lasso& model, const char* path)
-    { save(model, std::string(path)); }
+    { save(model, detail::model_path_from_c_string(path)); }
 
     inline void save(const linear_model::ElasticNet& model, const char* path)
-    { save(model, std::string(path)); }
+    { save(model, detail::model_path_from_c_string(path)); }
 
     inline void save(const Model& model, const char* path)
-    { save(model, std::string(path)); }
+    { save(model, detail::model_path_from_c_string(path)); }
 
     inline Model load(const char* path)
-    { return load(std::string(path)); }
+    { return load(detail::model_path_from_c_string(path)); }
 
     inline Model load(const std::filesystem::path& path)
     { return load(path.string()); }

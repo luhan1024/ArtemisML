@@ -93,7 +93,9 @@ int main()
     NewtonOptimizer newton;
     OptimizerState newton_state;
     OptimizerOptions newton_options = gradient_options;
-    newton_options.learning_rate = 1.0;
+    // NewtonOptimizer uses the full Hessian direction and must not depend on
+    // the legacy GradientDescent learning-rate option.
+    newton_options.learning_rate = -1.0;
     const OptimizationStepResult newton_step = newton.step(
         problem,
         initial_parameters,
@@ -114,6 +116,16 @@ int main()
     );
     assert(singular_step.parameters.allFinite());
     assert(std::abs(singular_step.parameters(0)) < 1e-12);
+
+    GradientDescent configured_gradient_descent(0.2);
+    const OptimizationStepResult configured_step = configured_gradient_descent.step(
+        problem,
+        initial_parameters,
+        gradient_state,
+        gradient_options
+    );
+    assert(std::abs(configured_step.parameters(0) - 0.6) < 1e-12);
+    assert(std::abs(configured_step.parameters(1) + 0.4) < 1e-12);
 
     std::cout << "Optimizer test passed.\n";
     return 0;

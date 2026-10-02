@@ -43,3 +43,10 @@ H v = \\nabla_{\\theta}(\\nabla_{\\theta} f \\cdot v)
 
 当前支持基本加减乘除、`exp` 和 `log`；后续扩展 Jacobian、Hessian-vector product 和高阶导数。
 
+## 新增 core API 规范
+
+core 新接口必须与具体数据格式、模型和优化器解耦。新增类型先定义生命周期、所有权、
+维度和错误类型，再决定是否 header-only；不得在 core 中引入 CSV、模型参数或具体 loss。
+涉及求导时必须说明输入变量、输出变量、梯度/Jacobian 形状和不可导点策略，并在
+`tests/core` 用已知公式或有限差分验证。
+
