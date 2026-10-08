@@ -90,6 +90,8 @@ ArtemisML/
 新增 loss、model、optimizer、preprocessing、IO、pipeline、metrics 和 model_selection 的
 标准 API 构建方法见 [art 公共 API 扩展规范](include/art/README.md)。该规范要求同步更新
 公共头文件、实现、测试和三层 README，并明确兼容策略、输入输出形状、错误语义及验证命令。
+公共 API 的兼容演进、数值输入布局和错误类型选择也以该规范为准；新增接口遵循目标契约，
+历史接口的迁移状态以对应层级 README 为准。
 
 自动求导是当前接口标准的核心基础设施。当前已实现
 `art::core::autodiff::Variable`、`GradientTape`、标量反向模式梯度以及

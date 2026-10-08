@@ -27,6 +27,18 @@
 完成度：基础类型、错误分类、配置占位和 Eigen 适配已实现；统一错误体系尚未迁移所有
 历史模块，自动求导仍由现有 `autodiff.h` 独立维护。
 
+## 错误类型选择规范
+
+新增 API 应按 `include/art/README.md` 的错误契约抛出最具体的项目异常：参数配置错误用
+`ParameterError`；数据错误用 `DataError` 及其维度、类型、缺失值和索引子类；不支持的
+操作用 `UnsupportedOperationError`。未训练模型状态属于 `base::NotFittedError`，不应为此
+让 core 依赖 base。
+
+这些项目异常当前统一继承 `core::Error`（`std::runtime_error`）。历史代码中的
+`std::invalid_argument`、`std::out_of_range` 和 `std::logic_error` 尚未全部迁移；新增实现
+应使用项目异常，历史接口迁移时须同步调整异常测试并记录兼容影响。错误消息供诊断使用，
+程序逻辑应优先依据异常类型处理，不应解析消息文本。
+
 ## 自动求导
 
 当前已实现 `Variable + GradientTape` 协议和标量反向模式。标量目标函数为 (f(\\theta)) 时，反向模式计算：
